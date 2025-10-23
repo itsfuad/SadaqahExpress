@@ -32,6 +32,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,9 +58,6 @@ export default function ManageProducts() {
     image: "",
     price: 0,
     originalPrice: 0,
-    rating: 5,
-    reviewCount: 0,
-    badge: "",
     category: "microsoft",
     stock: 0,
   });
@@ -157,9 +161,6 @@ export default function ManageProducts() {
       image: "",
       price: 0,
       originalPrice: 0,
-      rating: 5,
-      reviewCount: 0,
-      badge: "",
       category: "microsoft",
       stock: 0,
     });
@@ -175,9 +176,6 @@ export default function ManageProducts() {
         image: product.image,
         price: product.price,
         originalPrice: product.originalPrice,
-        rating: product.rating,
-        reviewCount: product.reviewCount,
-        badge: product.badge,
         category: product.category,
         stock: product.stock,
       });
@@ -190,13 +188,20 @@ export default function ManageProducts() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Add default values for rating and reviewCount
+    const productData = {
+      ...formData,
+      rating: 0,
+      reviewCount: 0,
+    };
+    
     if (editingProduct) {
       updateProductMutation.mutate({
         id: editingProduct.id,
-        product: formData as InsertProduct,
+        product: productData as InsertProduct,
       });
     } else {
-      createProductMutation.mutate(formData as InsertProduct);
+      createProductMutation.mutate(productData as InsertProduct);
     }
   };
 
@@ -209,6 +214,19 @@ export default function ManageProducts() {
     if (deletingProductId) {
       deleteProductMutation.mutate(deletingProductId);
     }
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.name?.trim() !== "" &&
+      formData.description?.trim() !== "" &&
+      formData.image?.trim() !== "" &&
+      formData.category?.trim() !== "" &&
+      formData.price !== undefined &&
+      formData.price > 0 &&
+      formData.stock !== undefined &&
+      formData.stock >= 0
+    );
   };
 
   return (
@@ -254,14 +272,13 @@ export default function ManageProducts() {
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Stock</TableHead>
-                  <TableHead>Rating</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {products.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       No products yet. Click "Add Product" to create one.
                     </TableCell>
                   </TableRow>
@@ -279,7 +296,6 @@ export default function ManageProducts() {
                       <TableCell className="capitalize">{product.category}</TableCell>
                       <TableCell className="font-semibold">৳{product.price.toFixed(2)}</TableCell>
                       <TableCell>{product.stock}</TableCell>
-                      <TableCell>{product.rating} ⭐ ({product.reviewCount})</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -353,38 +369,41 @@ export default function ManageProducts() {
                   onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                   required
                 />
+                {formData.image && (
+                  <div className="mt-2 border rounded-md overflow-hidden bg-muted">
+                    <img
+                      src={formData.image}
+                      alt="Preview"
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23ddd' width='200' height='200'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EInvalid URL%3C/text%3E%3C/svg%3E";
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <select
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    required
-                  >
-                    <option value="microsoft">Microsoft</option>
-                    <option value="antivirus">Anti Virus</option>
-                    <option value="vpn">VPN</option>
-                    <option value="streaming">Streaming</option>
-                    <option value="educational">Educational</option>
-                    <option value="editing">Editing</option>
-                    <option value="music">Music</option>
-                    <option value="utilities">Utilities</option>
-                  </select>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="badge">Badge (optional)</Label>
-                  <Input
-                    id="badge"
-                    value={formData.badge || ""}
-                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                    placeholder="e.g., Popular, New"
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background">
+                    <SelectItem value="microsoft">Microsoft</SelectItem>
+                    <SelectItem value="antivirus">Anti Virus</SelectItem>
+                    <SelectItem value="vpn">VPN</SelectItem>
+                    <SelectItem value="streaming">Streaming</SelectItem>
+                    <SelectItem value="educational">Educational</SelectItem>
+                    <SelectItem value="editing">Editing</SelectItem>
+                    <SelectItem value="music">Music</SelectItem>
+                    <SelectItem value="utilities">Utilities</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -414,44 +433,16 @@ export default function ManageProducts() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="stock">Stock *</Label>
-                  <Input
-                    id="stock"
-                    type="number"
-                    min="0"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-                    required
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="rating">Rating *</Label>
-                  <Input
-                    id="rating"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={formData.rating}
-                    onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) })}
-                    required
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="reviewCount">Reviews *</Label>
-                  <Input
-                    id="reviewCount"
-                    type="number"
-                    min="0"
-                    value={formData.reviewCount}
-                    onChange={(e) => setFormData({ ...formData, reviewCount: parseInt(e.target.value) })}
-                    required
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="stock">Stock *</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  min="0"
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
+                  required
+                />
               </div>
             </div>
             <DialogFooter>
@@ -465,7 +456,7 @@ export default function ManageProducts() {
               >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={!isFormValid()}>
                 {editingProduct ? "Update Product" : "Create Product"}
               </Button>
             </DialogFooter>

@@ -1,15 +1,16 @@
-import { Search, ShoppingCart, Phone, ShieldCheck, ChevronDown, Laptop, Shield, Key, Youtube, GraduationCap, Film, Music, Wrench } from "lucide-react";
+import { Search, ShoppingCart, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface HeaderProps {
   cartItemCount?: number;
@@ -23,15 +24,15 @@ interface HeaderProps {
 }
 
 const categories = [
-  { id: "all", label: "All Products", icon: null },
-  { id: "microsoft", label: "Microsoft", icon: Laptop },
-  { id: "antivirus", label: "Anti Virus", icon: Shield },
-  { id: "vpn", label: "VPN", icon: Key },
-  { id: "streaming", label: "Streaming", icon: Youtube },
-  { id: "educational", label: "Educational", icon: GraduationCap },
-  { id: "editing", label: "Editing", icon: Film },
-  { id: "music", label: "Music", icon: Music },
-  { id: "utilities", label: "Utilities", icon: Wrench },
+  { id: "all", label: "All Products" },
+  { id: "microsoft", label: "Microsoft" },
+  { id: "antivirus", label: "Anti Virus" },
+  { id: "vpn", label: "VPN" },
+  { id: "streaming", label: "Streaming" },
+  { id: "educational", label: "Educational" },
+  { id: "editing", label: "Editing" },
+  { id: "music", label: "Music" },
+  { id: "utilities", label: "Utilities" },
 ];
 
 export function Header({ 
@@ -60,7 +61,6 @@ export function Header({
     setSearchExpanded(!searchExpanded);
   };
 
-  const activeCategoryLabel = categories.find(cat => cat.id === activeCategory)?.label || "Categories";
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg">
       <div className="container mx-auto px-4">
@@ -86,29 +86,18 @@ export function Header({
               </div>
             </a>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2 ml-2 md:ml-4">
-                  <span className="text-sm">{activeCategoryLabel}</span>
-                  <ChevronDown className="h-4 w-4 transition-transform duration-200" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                {categories.map((category) => {
-                  const Icon = category.icon;
-                  return (
-                    <DropdownMenuItem
-                      key={category.id}
-                      onClick={() => onCategoryChange?.(category.id)}
-                      className="gap-2 cursor-pointer"
-                    >
-                      {Icon && <Icon className="h-4 w-4" />}
-                      <span>{category.label}</span>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Select value={activeCategory} onValueChange={onCategoryChange}>
+              <SelectTrigger className="w-[180px] ml-2 md:ml-4">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Desktop search - center, always visible */}
