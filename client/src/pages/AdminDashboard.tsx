@@ -188,29 +188,31 @@ export default function AdminDashboard() {
                         ৳{order.total.toFixed(2)}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={order.status === "completed" ? "default" : "secondary"}
+                        <span
+                          className={order.status === "completed" ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}
                           data-testid={`badge-status-${order.id}`}
                         >
                           {order.status}
-                        </Badge>
+                        </span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(order.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        {order.status === "pending" && (
+                        {order.status === "pending" ? (
                           <Button 
-                            variant="ghost" 
                             size="sm"
                             onClick={() => updateOrderStatusMutation.mutate({ 
                               orderId: order.id, 
                               status: "completed" 
                             })}
+                            className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 border-0"
                             data-testid={`button-complete-${order.id}`}
                           >
                             Complete
                           </Button>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                     </TableRow>

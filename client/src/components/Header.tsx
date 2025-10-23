@@ -45,6 +45,7 @@ export function Header({
   onCategoryChange
 }: HeaderProps) {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
@@ -55,6 +56,10 @@ export function Header({
     window.location.href = "/admin/dashboard";
   };
 
+  const handleSearchToggle = () => {
+    setSearchExpanded(!searchExpanded);
+  };
+
   const activeCategoryLabel = categories.find(cat => cat.id === activeCategory)?.label || "Categories";
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg">
@@ -62,21 +67,29 @@ export function Header({
         {/* Top row: Logo, Category, Icons */}
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           <div className="flex items-center gap-2">
+            {/* Logo - Full branding on desktop, icon only on mobile */}
             <a 
               href="/" 
-              className="cursor-pointer hover:opacity-80 transition-opacity"
+              className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3"
             >
-              <h1 className="text-lg md:text-xl font-bold font-serif">
-                <span className="lg:hidden">SE</span>
-                <span className="hidden lg:inline">SadaqahExpress</span>
-              </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Digital Products</p>
+              {/* Logo icon - always visible */}
+              <img 
+                src="/favicon.png" 
+                alt="SadaqahExpress Logo" 
+                className="w-10 h-10 md:w-12 md:h-12 shrink-0"
+              />
+              
+              {/* Text branding - hidden on mobile, visible on desktop */}
+              <div className="hidden lg:block">
+                <h1 className="text-xl font-bold font-serif leading-tight">SadaqahExpress</h1>
+                <p className="text-xs text-muted-foreground">Digital Products</p>
+              </div>
             </a>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-2 ml-2 md:ml-4">
-                  <span className="font-semibold text-sm md:text-base">{activeCategoryLabel}</span>
+                  <span className="text-sm">{activeCategoryLabel}</span>
                   <ChevronDown className="h-4 w-4 transition-transform duration-200" />
                 </Button>
               </DropdownMenuTrigger>
@@ -98,7 +111,7 @@ export function Header({
             </DropdownMenu>
           </div>
 
-          {/* Desktop search - center */}
+          {/* Desktop search - center, always visible */}
           <div className="hidden lg:flex flex-1 max-w-xl mx-8">
             <form 
               onSubmit={(e) => {
@@ -107,36 +120,37 @@ export function Header({
               }}
               className="w-full flex items-center gap-2"
             >
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                <Input
-                  type="search"
-                  placeholder="Search products..."
-                  className="pl-10 pr-4 w-full h-10"
-                  data-testid="input-search"
-                  value={searchValue}
-                  onChange={(e) => onSearchChange?.(e.target.value)}
-                />
-              </div>
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="flex-1 h-10"
+                data-testid="input-search-desktop"
+                value={searchValue}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+              />
               <Button 
                 type="submit"
-                variant="default" 
-                className="h-10 px-6 shrink-0"
-                data-testid="button-search"
+                variant="ghost" 
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                data-testid="button-search-desktop"
               >
-                Search
+                <Search className="h-4 w-4" />
               </Button>
             </form>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="hidden md:flex items-center gap-2 text-sm">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Hotline</p>
-                <p className="font-semibold">(+880) 123-4567890</p>
-              </div>
-            </div>
+            {/* Search toggle button - mobile only */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleSearchToggle}
+              className="lg:hidden"
+              data-testid="button-search-toggle"
+            >
+              <Search className="h-5 w-5" />
+            </Button>
 
             <ThemeToggle />
 
@@ -173,36 +187,37 @@ export function Header({
           </div>
         </div>
 
-        {/* Mobile search bar - bottom row, only visible on mobile */}
-        <div className="lg:hidden pb-3">
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              onSearchSubmit?.();
-            }}
-            className="w-full flex items-center gap-2"
-          >
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+        {/* Mobile expandable search bar - appears below when toggled, hidden on desktop */}
+        {searchExpanded && (
+          <div className="lg:hidden pb-3 animate-in slide-in-from-top-2 duration-200">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                onSearchSubmit?.();
+              }}
+              className="w-full flex items-center gap-2"
+            >
               <Input
                 type="search"
                 placeholder="Search products..."
-                className="pl-10 pr-4 w-full h-10"
+                className="flex-1 h-10"
                 data-testid="input-search-mobile"
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
+                autoFocus
               />
-            </div>
-            <Button 
-              type="submit"
-              variant="default" 
-              className="h-10 px-4 shrink-0"
-              data-testid="button-search-mobile-submit"
-            >
-              Search
-            </Button>
-          </form>
-        </div>
+              <Button 
+                type="submit"
+                variant="ghost" 
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                data-testid="button-search-mobile"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+        )}
       </div>
     </header>
   );
