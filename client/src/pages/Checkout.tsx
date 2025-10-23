@@ -54,7 +54,10 @@ export default function Checkout() {
 
   const handleOrderSubmit = (data: any) => {
     const orderData = {
-      ...data,
+      customerName: data.fullName,
+      customerEmail: data.email,
+      customerPhone: data.phone,
+      notes: data.notes,
       items: cartItems.map(item => ({
         productId: item.id,
         productName: item.name,
