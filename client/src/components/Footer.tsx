@@ -1,7 +1,5 @@
-import { Facebook, Twitter, Instagram, Youtube, Mail } from "lucide-react";
+import { Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { SiVisa, SiMastercard, SiPaypal } from "react-icons/si";
 
 export function Footer() {
   const categories = [
@@ -26,7 +24,7 @@ export function Footer() {
     <footer className="bg-muted mt-12">
       <div className="container mx-auto px-4">
         <div className="py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="h-10 w-10 bg-primary rounded-md flex items-center justify-center">
@@ -88,31 +86,6 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Newsletter</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Subscribe to get special offers and updates.
-              </p>
-              <div className="flex gap-2 mb-4">
-                <Input
-                  type="email"
-                  placeholder="Your email"
-                  data-testid="input-newsletter"
-                />
-                <Button data-testid="button-subscribe">
-                  <Mail className="h-4 w-4" />
-                </Button>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">We Accept</p>
-                <div className="flex gap-3 items-center">
-                  <SiVisa className="h-8 w-8 text-foreground" />
-                  <SiMastercard className="h-8 w-8 text-foreground" />
-                  <SiPaypal className="h-8 w-8 text-foreground" />
-                </div>
-              </div>
             </div>
           </div>
         </div>

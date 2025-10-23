@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, Phone, User } from "lucide-react";
+import { Search, ShoppingCart, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
@@ -86,10 +86,6 @@ export function Header({ cartItemCount = 0, onCartClick, onSearchClick }: Header
                   {cartItemCount}
                 </Badge>
               )}
-            </Button>
-
-            <Button variant="ghost" size="icon" data-testid="button-login">
-              <User className="h-5 w-5" />
             </Button>
           </div>
         </div>

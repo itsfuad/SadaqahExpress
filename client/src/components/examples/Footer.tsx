@@ -1,5 +1,10 @@
 import { Footer } from '../Footer';
+import { ThemeProvider } from '../ThemeProvider';
 
 export default function FooterExample() {
-  return <Footer />;
+  return (
+    <ThemeProvider>
+      <Footer />
+    </ThemeProvider>
+  );
 }
