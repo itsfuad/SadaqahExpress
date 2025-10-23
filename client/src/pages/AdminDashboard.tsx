@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Package, ShoppingBag, DollarSign, Users, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import type { Order, Product } from "@shared/schema";
 import {
   Table,
@@ -19,6 +20,7 @@ import {
 
 export default function AdminDashboard() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
@@ -147,7 +149,9 @@ export default function AdminDashboard() {
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <CardTitle>Recent Orders</CardTitle>
-              <Button data-id="button-manage-products">Manage Products</Button>
+              <Button onClick={() => setLocation("/admin/products")} data-id="button-manage-products">
+                Manage Products
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
