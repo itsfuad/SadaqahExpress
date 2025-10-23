@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { CategoryNav } from "@/components/CategoryNav";
 import { HeroCarousel, type CarouselSlide } from "@/components/HeroCarousel";
@@ -10,11 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import heroImage1 from '@assets/generated_images/Windows_10_Pro_hero_banner_83c8c954.png';
 import heroImage2 from '@assets/generated_images/Office_2021_hero_banner_5189d70c.png';
 import heroImage3 from '@assets/generated_images/YouTube_Premium_hero_banner_0af84554.png';
-import win11Image from '@assets/generated_images/Windows_11_Pro_product_196eac28.png';
-import win10Image from '@assets/generated_images/Windows_10_Pro_product_40a7a793.png';
-import office365Image from '@assets/generated_images/Office_365_product_image_c759444f.png';
-import office2021Image from '@assets/generated_images/Office_2021_Pro_product_a1d6491d.png';
-import comboImage from '@assets/generated_images/Windows_Office_combo_product_ae6a5ccd.png';
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -49,94 +45,17 @@ export default function Home() {
     },
   ];
 
-  const allProducts: Product[] = [
-    {
-      id: 1,
-      name: "Windows 11 Pro",
-      image: win11Image,
-      price: 400.00,
-      originalPrice: 850.00,
-      rating: 5,
-      reviewCount: 19,
-      badge: "Bestseller",
-      category: "microsoft"
+  const { data: products = [], isLoading } = useQuery<Product[]>({
+    queryKey: ["/api/products", activeCategory],
+    queryFn: async () => {
+      const url = activeCategory === "all" 
+        ? "/api/products" 
+        : `/api/products?category=${activeCategory}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch products");
+      return response.json();
     },
-    {
-      id: 2,
-      name: "Windows 10 Pro",
-      image: win10Image,
-      price: 350.00,
-      originalPrice: 399.00,
-      rating: 4,
-      reviewCount: 62,
-      category: "microsoft"
-    },
-    {
-      id: 3,
-      name: "Combo Product",
-      image: comboImage,
-      price: 600.00,
-      originalPrice: 800.00,
-      rating: 5,
-      reviewCount: 45,
-      badge: "Sale",
-      category: "microsoft"
-    },
-    {
-      id: 4,
-      name: "Microsoft Office 365",
-      image: office365Image,
-      price: 400.00,
-      originalPrice: 600.00,
-      rating: 4,
-      reviewCount: 14,
-      category: "microsoft"
-    },
-    {
-      id: 5,
-      name: "Microsoft Office 2021 Pro Plus",
-      image: office2021Image,
-      price: 500.00,
-      originalPrice: 1500.00,
-      rating: 5,
-      reviewCount: 86,
-      category: "microsoft"
-    },
-    {
-      id: 6,
-      name: "Windows 11 Pro Digital License",
-      image: win11Image,
-      price: 450.00,
-      originalPrice: 900.00,
-      rating: 5,
-      reviewCount: 32,
-      category: "microsoft"
-    },
-    {
-      id: 7,
-      name: "Windows 10 Home",
-      image: win10Image,
-      price: 300.00,
-      originalPrice: 350.00,
-      rating: 4,
-      reviewCount: 28,
-      category: "microsoft"
-    },
-    {
-      id: 8,
-      name: "Office 2021 Home & Business",
-      image: office2021Image,
-      price: 450.00,
-      originalPrice: 1200.00,
-      rating: 5,
-      reviewCount: 54,
-      category: "microsoft"
-    },
-  ];
-
-  const filteredProducts = activeCategory === "all" 
-    ? allProducts 
-    : allProducts.filter(p => p.category === activeCategory);
+  });
 
   const handleAddToCart = (product: Product) => {
     const existingItem = cartItems.find(item => item.id === product.id);
@@ -178,10 +97,16 @@ export default function Home() {
   };
 
   const handleCheckout = () => {
-    toast({
-      title: "Checkout",
-      description: "Proceeding to checkout...",
-    });
+    if (cartItems.length === 0) {
+      toast({
+        title: "Cart is empty",
+        description: "Please add items to your cart before checking out.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cartItems));
     window.location.href = "/checkout";
   };
 
@@ -205,15 +130,23 @@ export default function Home() {
             <p className="text-muted-foreground">Browse our most popular digital products</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="h-96 bg-muted animate-pulse rounded-md" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </main>
 

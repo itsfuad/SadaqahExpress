@@ -1,21 +1,76 @@
+import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { CartItem } from "@/components/ShoppingCart";
 
 export default function Checkout() {
   const { toast } = useToast();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      setCartItems(JSON.parse(savedCart));
+    } else {
+      window.location.href = "/";
+    }
+  }, []);
+
+  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const createOrderMutation = useMutation({
+    mutationFn: async (orderData: any) => {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData),
+      });
+      if (!response.ok) throw new Error("Failed to create order");
+      return response.json();
+    },
+    onSuccess: () => {
+      localStorage.removeItem("cart");
+      toast({
+        title: "Order Submitted Successfully!",
+        description: "Check your email for order confirmation and payment instructions.",
+      });
+      
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2500);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Order Failed",
+        description: error.message || "Failed to submit order. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleOrderSubmit = (data: any) => {
-    toast({
-      title: "Order Submitted!",
-      description: "You will receive payment instructions via email shortly.",
-    });
-    
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 2000);
+    const orderData = {
+      ...data,
+      items: cartItems.map(item => ({
+        productId: item.id,
+        productName: item.name,
+        productImage: item.image,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      total,
+    };
+
+    createOrderMutation.mutate(orderData);
   };
+
+  if (cartItems.length === 0) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -32,7 +87,7 @@ export default function Checkout() {
         </div>
         
         <CheckoutForm 
-          total={1250.00}
+          total={total}
           onSubmit={handleOrderSubmit}
         />
       </main>

@@ -1,0 +1,192 @@
+import { Resend } from 'resend';
+import type { Order } from '@shared/schema';
+
+let connectionSettings: any;
+
+async function getCredentials() {
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
+  const xReplitToken = process.env.REPL_IDENTITY 
+    ? 'repl ' + process.env.REPL_IDENTITY 
+    : process.env.WEB_REPL_RENEWAL 
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+    : null;
+
+  if (!xReplitToken) {
+    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+  }
+
+  connectionSettings = await fetch(
+    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
+    {
+      headers: {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': xReplitToken
+      }
+    }
+  ).then(res => res.json()).then(data => data.items?.[0]);
+
+  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
+    throw new Error('Resend not connected');
+  }
+  return {apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email};
+}
+
+async function getUncachableResendClient() {
+  const {apiKey, fromEmail} = await getCredentials();
+  return {
+    client: new Resend(apiKey),
+    fromEmail: fromEmail || 'noreply@bdtechpark.com'
+  };
+}
+
+export async function sendOrderConfirmationToCustomer(order: Order) {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    
+    const itemsList = order.items.map(item => 
+      `- ${item.productName} x${item.quantity} - ৳${(item.price * item.quantity).toFixed(2)}`
+    ).join('\n');
+
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #3b82f6;">Thank you for your order!</h1>
+        <p>Dear ${order.customerName},</p>
+        <p>We have received your order and will process it shortly.</p>
+        
+        <h2>Order Details</h2>
+        <p><strong>Order ID:</strong> ${order.id}</p>
+        <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleString()}</p>
+        
+        <h3>Items:</h3>
+        <pre style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem;">${itemsList}</pre>
+        
+        <p><strong>Total Amount:</strong> ৳${order.total.toFixed(2)}</p>
+        
+        ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ''}
+        
+        <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e5e7eb;" />
+        
+        <h3>Next Steps:</h3>
+        <p>You will receive payment instructions via email shortly. Once payment is confirmed, we will deliver your digital products to this email address.</p>
+        
+        <p style="margin-top: 2rem; color: #6b7280; font-size: 0.875rem;">
+          If you have any questions, please contact us at (+880) 183-9545699
+        </p>
+        
+        <p style="color: #6b7280; font-size: 0.875rem;">
+          Best regards,<br/>
+          BD TechPark Team
+        </p>
+      </div>
+    `;
+
+    await client.emails.send({
+      from: fromEmail,
+      to: order.customerEmail,
+      subject: `Order Confirmation - ${order.id}`,
+      html,
+    });
+
+    console.log(`Order confirmation email sent to ${order.customerEmail}`);
+  } catch (error) {
+    console.error('Failed to send customer confirmation email:', error);
+    throw error;
+  }
+}
+
+export async function sendOrderNotificationToAdmin(order: Order, adminEmail: string = 'admin@bdtechpark.com') {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    
+    const itemsList = order.items.map(item => 
+      `- ${item.productName} x${item.quantity} - ৳${(item.price * item.quantity).toFixed(2)}`
+    ).join('\n');
+
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #3b82f6;">New Order Received</h1>
+        
+        <h2>Order Details</h2>
+        <p><strong>Order ID:</strong> ${order.id}</p>
+        <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleString()}</p>
+        <p><strong>Status:</strong> ${order.status}</p>
+        
+        <h3>Customer Information:</h3>
+        <p><strong>Name:</strong> ${order.customerName}</p>
+        <p><strong>Email:</strong> ${order.customerEmail}</p>
+        <p><strong>Phone:</strong> ${order.customerPhone}</p>
+        
+        <h3>Items:</h3>
+        <pre style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem;">${itemsList}</pre>
+        
+        <p><strong>Total Amount:</strong> ৳${order.total.toFixed(2)}</p>
+        
+        ${order.notes ? `<h3>Customer Notes:</h3><p>${order.notes}</p>` : ''}
+        
+        <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e5e7eb;" />
+        
+        <p style="margin-top: 2rem;">
+          <a href="${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/admin/dashboard" 
+             style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; display: inline-block;">
+            View in Dashboard
+          </a>
+        </p>
+      </div>
+    `;
+
+    await client.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      subject: `New Order: ${order.id} - ৳${order.total.toFixed(2)}`,
+      html,
+    });
+
+    console.log(`Order notification email sent to admin at ${adminEmail}`);
+  } catch (error) {
+    console.error('Failed to send admin notification email:', error);
+    throw error;
+  }
+}
+
+export async function sendProductDeliveryEmail(order: Order) {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    
+    const itemsList = order.items.map(item => 
+      `${item.productName} x${item.quantity}`
+    ).join(', ');
+
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #10b981;">Your Digital Products Are Ready!</h1>
+        <p>Dear ${order.customerName},</p>
+        <p>Payment confirmed! Your digital products are now being delivered.</p>
+        
+        <h2>Order: ${order.id}</h2>
+        <p><strong>Products:</strong> ${itemsList}</p>
+        
+        <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0;"><strong>Important:</strong> Your product license keys and download instructions will be sent in a separate email within 24 hours. Please check your inbox and spam folder.</p>
+        </div>
+        
+        <p>For immediate assistance, please contact us at (+880) 183-9545699</p>
+        
+        <p style="margin-top: 2rem; color: #6b7280; font-size: 0.875rem;">
+          Thank you for choosing BD TechPark!
+        </p>
+      </div>
+    `;
+
+    await client.emails.send({
+      from: fromEmail,
+      to: order.customerEmail,
+      subject: `Product Delivery - ${order.id}`,
+      html,
+    });
+
+    console.log(`Product delivery email sent to ${order.customerEmail}`);
+  } catch (error) {
+    console.error('Failed to send product delivery email:', error);
+    throw error;
+  }
+}

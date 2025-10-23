@@ -34,12 +34,19 @@ export default function AdminLogin() {
     },
   });
 
-  const handleSubmit = (data: LoginFormData) => {
+  const handleSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     
-    // TODO: Replace with actual authentication
-    setTimeout(() => {
-      if (data.username === "admin" && data.password === "admin") {
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        localStorage.setItem("admin", JSON.stringify(result.user));
         toast({
           title: "Login successful",
           description: "Welcome to admin dashboard",
@@ -52,8 +59,15 @@ export default function AdminLogin() {
           variant: "destructive",
         });
       }
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

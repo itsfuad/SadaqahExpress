@@ -8,6 +8,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product routes
   app.get("/api/products", async (req, res) => {
     try {
+      // Disable caching for API responses
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       const category = req.query.category as string | undefined;
       
       if (category && category !== "all") {
@@ -129,9 +134,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedOrder = insertOrderSchema.parse(req.body);
       const order = await storage.createOrder(validatedOrder);
       
-      // TODO: Send email notifications here
-      // - Send confirmation email to customer
-      // - Send notification email to admin
+      // Send email notifications asynchronously
+      (async () => {
+        try {
+          const { sendOrderConfirmationToCustomer, sendOrderNotificationToAdmin } = await import("./email");
+          await Promise.all([
+            sendOrderConfirmationToCustomer(order),
+            sendOrderNotificationToAdmin(order),
+          ]);
+        } catch (emailError) {
+          console.error("Failed to send order emails:", emailError);
+        }
+      })();
       
       res.status(201).json(order);
     } catch (error) {
@@ -155,10 +169,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Order not found" });
       }
 
+      // Send delivery email when order is completed
+      if (status === "completed") {
+        (async () => {
+          try {
+            const { sendProductDeliveryEmail } = await import("./email");
+            await sendProductDeliveryEmail(order);
+          } catch (emailError) {
+            console.error("Failed to send delivery email:", emailError);
+          }
+        })();
+      }
+
       res.json(order);
     } catch (error) {
       console.error("Error updating order status:", error);
       res.status(500).json({ error: "Failed to update order status" });
+    }
+  });
+
+  // Test email endpoint (for debugging)
+  app.get("/api/test-email", async (req, res) => {
+    try {
+      const { sendOrderConfirmationToCustomer } = await import("./email");
+      const testOrder = {
+        id: "TEST-001",
+        customerName: "Test User",
+        customerEmail: req.query.email as string || "test@example.com",
+        customerPhone: "+880123456789",
+        items: [{
+          productId: 1,
+          productName: "Windows 11 Pro",
+          productImage: "/test.png",
+          price: 400,
+          quantity: 1,
+        }],
+        total: 400,
+        status: "pending" as const,
+        createdAt: new Date().toISOString(),
+      };
+      
+      await sendOrderConfirmationToCustomer(testOrder);
+      res.json({ success: true, message: "Test email sent successfully" });
+    } catch (error) {
+      console.error("Test email failed:", error);
+      res.status(500).json({ error: "Failed to send test email", details: String(error) });
     }
   });
 
