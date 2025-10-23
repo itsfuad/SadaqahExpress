@@ -188,11 +188,12 @@ export default function ManageProducts() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Add default values for rating and reviewCount
+    // Add default values for rating and reviewCount, ensure badge is undefined or empty
     const productData = {
       ...formData,
       rating: 0,
       reviewCount: 0,
+      badge: undefined,
     };
     
     if (editingProduct) {

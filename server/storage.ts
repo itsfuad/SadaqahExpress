@@ -385,7 +385,13 @@ export class RedisStorage implements IStorage {
     const id = nextId ? parseInt(nextId) : 1;
     
     const product: Product = { id, ...insertProduct };
-    await this.client.hSet(`product:${id}`, product as any);
+    
+    // Filter out undefined values to prevent Redis errors
+    const filteredProduct = Object.fromEntries(
+      Object.entries(product).filter(([_, value]) => value !== undefined)
+    );
+    
+    await this.client.hSet(`product:${id}`, filteredProduct as any);
     await this.client.sAdd('products:list', id.toString());
     await this.client.set('products:nextId', (id + 1).toString());
     
@@ -397,7 +403,13 @@ export class RedisStorage implements IStorage {
     if (!existing) return undefined;
     
     const updated = { ...existing, ...updates };
-    await this.client.hSet(`product:${id}`, updated as any);
+    
+    // Filter out undefined values to prevent Redis errors
+    const filteredUpdates = Object.fromEntries(
+      Object.entries(updated).filter(([_, value]) => value !== undefined)
+    );
+    
+    await this.client.hSet(`product:${id}`, filteredUpdates as any);
     return updated;
   }
 
