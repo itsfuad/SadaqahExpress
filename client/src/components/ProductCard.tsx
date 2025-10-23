@@ -52,30 +52,30 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         )}
       </div>
       <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2" data-testid={`text-product-name-${product.id}`}>
+        <h3 className="font-semibold text-base mb-2 line-clamp-2" data-testid={`text-product-name-${product.id}`}>
           {product.name}
         </h3>
         <div className="flex items-center gap-1 mb-3">
           {[...Array(5)].map((_, i) => (
             <Star
               key={i}
-              className={`h-4 w-4 ${
+              className={`h-3.5 w-3.5 ${
                 i < Math.floor(product.rating)
                   ? "fill-chart-3 text-chart-3"
                   : "text-muted-foreground"
               }`}
             />
           ))}
-          <span className="text-sm text-muted-foreground ml-1">
+          <span className="text-xs text-muted-foreground ml-1">
             {product.reviewCount}
           </span>
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold" data-testid={`text-price-${product.id}`}>
+          <span className="text-xl font-bold" data-testid={`text-price-${product.id}`}>
             ৳ {product.price.toFixed(2)}
           </span>
           {product.originalPrice && (
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-xs text-muted-foreground line-through">
               ৳ {product.originalPrice.toFixed(2)}
             </span>
           )}

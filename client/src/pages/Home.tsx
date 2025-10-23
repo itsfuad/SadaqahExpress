@@ -161,14 +161,14 @@ export default function Home() {
       <HeroCarousel slides={carouselSlides} />
       
       <main className="flex-1">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-8 md:px-12 lg:px-16 xl:px-20 py-8">
           <div className="mb-6">
-            <h2 className="text-2xl md:text-3xl font-bold font-serif mb-2">
+            <h2 className="text-xl md:text-2xl font-bold font-serif mb-2">
               {searchQuery.trim() 
                 ? `Search Results for "${searchQuery}"` 
                 : "Browse Products"}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {searchQuery.trim()
                 ? `Found ${filteredProducts.length} ${filteredProducts.length === 1 ? 'product' : 'products'}`
                 : "Browse our most popular digital products"}
@@ -176,7 +176,7 @@ export default function Home() {
           </div>
           
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="h-96 bg-muted animate-pulse rounded-md" />
               ))}
@@ -197,7 +197,7 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7 lg:gap-8">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
