@@ -46,7 +46,7 @@ export function Header({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   type="search"
-                  placeholder="I'm shopping for..."
+                  placeholder="Search products..."
                   className="pl-10 pr-4 w-full h-10"
                   data-testid="input-search"
                   value={searchValue}

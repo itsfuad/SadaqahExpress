@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { CategoryNav } from "@/components/CategoryNav";
 import { HeroCarousel, type CarouselSlide } from "@/components/HeroCarousel";
@@ -14,12 +15,32 @@ import heroImage2 from '@assets/generated_images/Office_2021_hero_banner_5189d70
 import heroImage3 from '@assets/generated_images/YouTube_Premium_hero_banner_0af84554.png';
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [location, setLocation] = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
+
+  // Get URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const [activeCategory, setActiveCategory] = useState(urlParams.get("category") || "all");
+  const [searchQuery, setSearchQuery] = useState(urlParams.get("search") || "");
+
+  // Update URL when category or search changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    
+    if (activeCategory && activeCategory !== "all") {
+      params.set("category", activeCategory);
+    }
+    
+    if (searchQuery.trim()) {
+      params.set("search", searchQuery.trim());
+    }
+    
+    const newUrl = params.toString() ? `/?${params.toString()}` : "/";
+    window.history.pushState({}, "", newUrl);
+  }, [activeCategory, searchQuery]);
 
   const carouselSlides: CarouselSlide[] = [
     {
