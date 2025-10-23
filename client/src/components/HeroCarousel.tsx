@@ -72,7 +72,7 @@ export function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCarouselPr
                     size="lg" 
                     variant="default"
                     className="bg-primary hover:bg-primary/90"
-                    data-testid={`button-cta-${slide.id}`}
+                    data-id={`button-cta-${slide.id}`}
                   >
                     {slide.ctaText}
                   </Button>
@@ -111,7 +111,7 @@ export function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCarouselPr
                 : "bg-white/50 hover:bg-white/75"
             }`}
             onClick={() => goToSlide(index)}
-            data-testid={`button-carousel-dot-${index}`}
+            data-id={`button-carousel-dot-${index}`}
           />
         ))}
       </div>

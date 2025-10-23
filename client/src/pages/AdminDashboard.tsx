@@ -114,7 +114,7 @@ export default function AdminDashboard() {
             variant="outline" 
             onClick={handleLogout}
             className="gap-2"
-            data-testid="button-logout"
+            data-id="button-logout"
           >
             <LogOut className="h-4 w-4" />
             Logout
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <CardTitle>Recent Orders</CardTitle>
-              <Button data-testid="button-manage-products">Manage Products</Button>
+              <Button data-id="button-manage-products">Manage Products</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -174,7 +174,7 @@ export default function AdminDashboard() {
                 ) : (
                   orders.slice(0, 10).map((order) => (
                     <TableRow key={order.id}>
-                      <TableCell className="font-mono text-sm" data-testid={`text-order-${order.id}`}>
+                      <TableCell className="font-mono text-sm" data-id={`text-order-${order.id}`}>
                         {order.id}
                       </TableCell>
                       <TableCell>{order.customerName}</TableCell>
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
                       <TableCell>
                         <span
                           className={order.status === "completed" ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}
-                          data-testid={`badge-status-${order.id}`}
+                          data-id={`badge-status-${order.id}`}
                         >
                           {order.status}
                         </span>
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
                               status: "completed" 
                             })}
                             className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 border-0"
-                            data-testid={`button-complete-${order.id}`}
+                            data-id={`button-complete-${order.id}`}
                           >
                             Complete
                           </Button>

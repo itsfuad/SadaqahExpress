@@ -37,7 +37,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           <Badge 
             variant="destructive" 
             className="absolute top-2 right-2"
-            data-testid={`badge-product-${product.id}`}
+            data-id={`badge-product-${product.id}`}
           >
             {product.badge}
           </Badge>
@@ -45,14 +45,14 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         {discount > 0 && (
           <Badge 
             className="absolute top-2 left-2 bg-chart-3 text-foreground"
-            data-testid={`badge-discount-${product.id}`}
+            data-id={`badge-discount-${product.id}`}
           >
             -{discount}%
           </Badge>
         )}
       </div>
       <CardContent className="p-4">
-        <h3 className="font-semibold text-base mb-2 line-clamp-2" data-testid={`text-product-name-${product.id}`}>
+        <h3 className="font-semibold text-base mb-2 line-clamp-2" data-id={`text-product-name-${product.id}`}>
           {product.name}
         </h3>
         <div className="flex items-center gap-1 mb-3">
@@ -71,7 +71,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           </span>
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-xl font-bold" data-testid={`text-price-${product.id}`}>
+          <span className="text-xl font-bold" data-id={`text-price-${product.id}`}>
             ৳ {product.price.toFixed(2)}
           </span>
           {product.originalPrice && (
@@ -85,7 +85,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         <Button
           className="w-full gap-2"
           onClick={() => onAddToCart?.(product)}
-          data-testid={`button-add-to-cart-${product.id}`}
+          data-id={`button-add-to-cart-${product.id}`}
         >
           <ShoppingCart className="h-4 w-4" />
           Add to Cart

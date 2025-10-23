@@ -36,16 +36,16 @@ export function Footer() {
                 Your trusted source for premium digital products, software licenses, and streaming subscriptions.
               </p>
               <div className="flex gap-2">
-                <Button variant="ghost" size="icon" data-testid="button-social-facebook">
+                <Button variant="ghost" size="icon" data-id="button-social-facebook">
                   <Facebook className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" data-testid="button-social-twitter">
+                <Button variant="ghost" size="icon" data-id="button-social-twitter">
                   <Twitter className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" data-testid="button-social-instagram">
+                <Button variant="ghost" size="icon" data-id="button-social-instagram">
                   <Instagram className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" data-testid="button-social-youtube">
+                <Button variant="ghost" size="icon" data-id="button-social-youtube">
                   <Youtube className="h-5 w-5" />
                 </Button>
               </div>
@@ -59,7 +59,7 @@ export function Footer() {
                     <a
                       href="#"
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      data-testid={`link-category-${index}`}
+                      data-id={`link-category-${index}`}
                     >
                       {category}
                     </a>
@@ -76,7 +76,7 @@ export function Footer() {
                     <a
                       href="#"
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      data-testid={`link-quick-${index}`}
+                      data-id={`link-quick-${index}`}
                     >
                       {link}
                     </a>

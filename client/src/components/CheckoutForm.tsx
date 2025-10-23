@@ -65,7 +65,7 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
                           <Input 
                             placeholder="John Doe" 
                             {...field}
-                            data-testid="input-fullname"
+                            data-id="input-fullname"
                           />
                         </FormControl>
                         <FormMessage />
@@ -84,7 +84,7 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
                             type="email"
                             placeholder="john@example.com"
                             {...field}
-                            data-testid="input-email"
+                            data-id="input-email"
                           />
                         </FormControl>
                         <FormMessage />
@@ -103,7 +103,7 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
                             type="tel"
                             placeholder="+880 1234567890"
                             {...field}
-                            data-testid="input-phone"
+                            data-id="input-phone"
                           />
                         </FormControl>
                         <FormMessage />
@@ -123,7 +123,7 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
                             className="resize-none"
                             rows={4}
                             {...field}
-                            data-testid="input-notes"
+                            data-id="input-notes"
                           />
                         </FormControl>
                         <FormMessage />
@@ -135,7 +135,7 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    data-testid="button-submit-order"
+                    data-id="button-submit-order"
                   >
                     Submit Order
                   </Button>
@@ -153,16 +153,16 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
             <CardContent className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span data-testid="text-subtotal">৳ {total.toFixed(2)}</span>
+                <span data-id="text-subtotal">৳ {total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Processing Fee</span>
-                <span data-testid="text-fee">৳ 0.00</span>
+                <span data-id="text-fee">৳ 0.00</span>
               </div>
               <div className="border-t pt-4">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span data-testid="text-order-total">৳ {total.toFixed(2)}</span>
+                  <span data-id="text-order-total">৳ {total.toFixed(2)}</span>
                 </div>
               </div>
               <div className="bg-muted p-4 rounded-md">

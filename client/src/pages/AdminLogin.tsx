@@ -102,7 +102,7 @@ export default function AdminLogin() {
                       <Input 
                         placeholder="admin" 
                         {...field}
-                        data-testid="input-username"
+                        data-id="input-username"
                       />
                     </FormControl>
                     <FormMessage />
@@ -121,7 +121,7 @@ export default function AdminLogin() {
                         type="password"
                         placeholder="••••••••"
                         {...field}
-                        data-testid="input-password"
+                        data-id="input-password"
                       />
                     </FormControl>
                     <FormMessage />
@@ -133,7 +133,7 @@ export default function AdminLogin() {
                 type="submit" 
                 className="w-full" 
                 disabled={isLoading}
-                data-testid="button-login"
+                data-id="button-login"
               >
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>

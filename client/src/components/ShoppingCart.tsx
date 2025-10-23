@@ -38,7 +38,7 @@ export function ShoppingCart({
       <div 
         className="fixed inset-0 bg-black/50 z-40 transition-opacity"
         onClick={onClose}
-        data-testid="cart-overlay"
+        data-id="cart-overlay"
       />
       <div className="fixed right-0 top-0 h-full w-full sm:w-96 bg-background z-50 shadow-xl flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
@@ -47,7 +47,7 @@ export function ShoppingCart({
             variant="ghost"
             size="icon"
             onClick={onClose}
-            data-testid="button-close-cart"
+            data-id="button-close-cart"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -60,7 +60,7 @@ export function ShoppingCart({
             <p className="text-muted-foreground mb-4">
               Add some products to get started!
             </p>
-            <Button onClick={onClose} data-testid="button-browse-products">
+            <Button onClick={onClose} data-id="button-browse-products">
               Browse Products
             </Button>
           </div>
@@ -78,7 +78,7 @@ export function ShoppingCart({
                       />
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-sm" data-testid={`text-cart-item-${item.id}`}>
+                          <h4 className="font-semibold text-sm" data-id={`text-cart-item-${item.id}`}>
                             {item.name}
                           </h4>
                           <Button
@@ -86,7 +86,7 @@ export function ShoppingCart({
                             size="icon"
                             className="h-6 w-6 -mt-1 -mr-2"
                             onClick={() => onRemoveItem?.(item.id)}
-                            data-testid={`button-remove-item-${item.id}`}
+                            data-id={`button-remove-item-${item.id}`}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -98,11 +98,11 @@ export function ShoppingCart({
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => onUpdateQuantity?.(item.id, Math.max(1, item.quantity - 1))}
-                            data-testid={`button-decrease-${item.id}`}
+                            data-id={`button-decrease-${item.id}`}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <Badge variant="secondary" className="px-3" data-testid={`text-quantity-${item.id}`}>
+                          <Badge variant="secondary" className="px-3" data-id={`text-quantity-${item.id}`}>
                             {item.quantity}
                           </Badge>
                           <Button
@@ -110,7 +110,7 @@ export function ShoppingCart({
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => onUpdateQuantity?.(item.id, item.quantity + 1)}
-                            data-testid={`button-increase-${item.id}`}
+                            data-id={`button-increase-${item.id}`}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -125,7 +125,7 @@ export function ShoppingCart({
             <div className="border-t p-4 space-y-4">
               <div className="flex items-center justify-between text-lg">
                 <span className="font-semibold">Total:</span>
-                <span className="text-2xl font-bold" data-testid="text-cart-total">
+                <span className="text-2xl font-bold" data-id="text-cart-total">
                   ৳ {total.toFixed(2)}
                 </span>
               </div>
@@ -133,7 +133,7 @@ export function ShoppingCart({
                 className="w-full" 
                 size="lg"
                 onClick={onCheckout}
-                data-testid="button-checkout"
+                data-id="button-checkout"
               >
                 Proceed to Checkout
               </Button>

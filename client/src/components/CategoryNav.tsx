@@ -46,7 +46,7 @@ export function CategoryNav({ activeCategory = "all", onCategoryChange }: Catego
                     : 'bg-primary/70 text-primary-foreground hover:bg-primary/80'
                 }`}
                 onClick={() => onCategoryChange?.(category.id)}
-                data-testid={`button-category-${category.id}`}
+                data-id={`button-category-${category.id}`}
               >
                 {Icon && <Icon className="h-4 w-4" />}
                 <span className="text-xs md:text-sm font-semibold">{category.label}</span>

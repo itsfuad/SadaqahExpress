@@ -124,7 +124,7 @@ export function Header({
                 type="search"
                 placeholder="Search products..."
                 className="flex-1 h-10"
-                data-testid="input-search-desktop"
+                data-id="input-search-desktop"
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
               />
@@ -133,7 +133,7 @@ export function Header({
                 variant="ghost" 
                 size="icon"
                 className="h-10 w-10 shrink-0"
-                data-testid="button-search-desktop"
+                data-id="button-search-desktop"
               >
                 <Search className="h-4 w-4" />
               </Button>
@@ -147,7 +147,7 @@ export function Header({
               size="icon"
               onClick={handleSearchToggle}
               className="lg:hidden"
-              data-testid="button-search-toggle"
+              data-id="button-search-toggle"
             >
               <Search className="h-5 w-5" />
             </Button>
@@ -160,7 +160,7 @@ export function Header({
                 size="icon"
                 onClick={handleAdminClick}
                 title="Admin Dashboard"
-                data-testid="button-admin"
+                data-id="button-admin"
               >
                 <ShieldCheck className="h-5 w-5 text-primary" />
               </Button>
@@ -171,14 +171,14 @@ export function Header({
               size="icon"
               className="relative"
               onClick={onCartClick}
-              data-testid="button-cart"
+              data-id="button-cart"
             >
               <ShoppingCart className="h-5 w-5" />
               {cartItemCount > 0 && (
                 <Badge 
                   variant="destructive" 
                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                  data-testid="badge-cart-count"
+                  data-id="badge-cart-count"
                 >
                   {cartItemCount}
                 </Badge>
@@ -201,7 +201,7 @@ export function Header({
                 type="search"
                 placeholder="Search products..."
                 className="flex-1 h-10"
-                data-testid="input-search-mobile"
+                data-id="input-search-mobile"
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 autoFocus
@@ -211,7 +211,7 @@ export function Header({
                 variant="ghost" 
                 size="icon"
                 className="h-10 w-10 shrink-0"
-                data-testid="button-search-mobile"
+                data-id="button-search-mobile"
               >
                 <Search className="h-4 w-4" />
               </Button>

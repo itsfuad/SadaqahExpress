@@ -10,7 +10,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      data-testid="button-theme-toggle"
+      data-id="button-theme-toggle"
     >
       {theme === "light" ? (
         <Moon className="h-5 w-5" />
