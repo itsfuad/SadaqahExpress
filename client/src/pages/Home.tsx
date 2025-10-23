@@ -136,6 +136,17 @@ export default function Home() {
                 <div key={i} className="h-96 bg-muted animate-pulse rounded-md" />
               ))}
             </div>
+          ) : products.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">No products available</h3>
+                <p className="text-muted-foreground">
+                  {activeCategory === "all" 
+                    ? "There are no products available at the moment." 
+                    : "No products found in this category."}
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {products.map((product) => (
