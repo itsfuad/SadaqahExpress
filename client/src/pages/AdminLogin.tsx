@@ -75,11 +75,8 @@ export default function AdminLogin() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2 mb-4">
-            <div className="h-10 w-10 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">BD</span>
-            </div>
             <div>
-              <CardTitle className="text-2xl font-serif">TechPark Admin</CardTitle>
+              <CardTitle className="text-2xl font-serif">SadaqahExpress Admin</CardTitle>
               <CardDescription>Sign in to manage your store</CardDescription>
             </div>
           </div>

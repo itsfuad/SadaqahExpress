@@ -1,47 +1,23 @@
 import { Resend } from 'resend';
 import type { Order } from '@shared/schema';
 
-let connectionSettings: any;
+// Initialize Resend client with API key from environment variable
+const resendClient = new Resend(process.env.RESEND_API_KEY);
+const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@sadaqahexpress.com';
 
-async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY environment variable is not set');
   }
-
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
-    throw new Error('Resend not connected');
-  }
-  return {apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email};
-}
-
-async function getUncachableResendClient() {
-  const {apiKey, fromEmail} = await getCredentials();
   return {
-    client: new Resend(apiKey),
-    fromEmail: fromEmail || 'noreply@bdtechpark.com'
+    client: resendClient,
+    fromEmail: fromEmail
   };
 }
 
 export async function sendOrderConfirmationToCustomer(order: Order) {
   try {
-    const { client, fromEmail } = await getUncachableResendClient();
+    const { client, fromEmail } = getResendClient();
     
     const itemsList = order.items.map(item => 
       `- ${item.productName} x${item.quantity} - ৳${(item.price * item.quantity).toFixed(2)}`
@@ -75,7 +51,7 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
         
         <p style="color: #6b7280; font-size: 0.875rem;">
           Best regards,<br/>
-          BD TechPark Team
+          SadaqahExpress Team
         </p>
       </div>
     `;
@@ -94,9 +70,11 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
   }
 }
 
-export async function sendOrderNotificationToAdmin(order: Order, adminEmail: string = 'admin@bdtechpark.com') {
+export async function sendOrderNotificationToAdmin(order: Order, adminEmail?: string) {
   try {
-    const { client, fromEmail } = await getUncachableResendClient();
+    const { client, fromEmail } = getResendClient();
+    const targetEmail = adminEmail || process.env.ADMIN_EMAIL || 'admin@sadaqahexpress.com';
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
     
     const itemsList = order.items.map(item => 
       `- ${item.productName} x${item.quantity} - ৳${(item.price * item.quantity).toFixed(2)}`
@@ -126,7 +104,7 @@ export async function sendOrderNotificationToAdmin(order: Order, adminEmail: str
         <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e5e7eb;" />
         
         <p style="margin-top: 2rem;">
-          <a href="${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/admin/dashboard" 
+          <a href="${baseUrl}/admin/dashboard" 
              style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; display: inline-block;">
             View in Dashboard
           </a>
@@ -136,12 +114,12 @@ export async function sendOrderNotificationToAdmin(order: Order, adminEmail: str
 
     await client.emails.send({
       from: fromEmail,
-      to: adminEmail,
+      to: targetEmail,
       subject: `New Order: ${order.id} - ৳${order.total.toFixed(2)}`,
       html,
     });
 
-    console.log(`Order notification email sent to admin at ${adminEmail}`);
+    console.log(`Order notification email sent to admin at ${targetEmail}`);
   } catch (error) {
     console.error('Failed to send admin notification email:', error);
     throw error;
@@ -150,7 +128,7 @@ export async function sendOrderNotificationToAdmin(order: Order, adminEmail: str
 
 export async function sendProductDeliveryEmail(order: Order) {
   try {
-    const { client, fromEmail } = await getUncachableResendClient();
+    const { client, fromEmail } = getResendClient();
     
     const itemsList = order.items.map(item => 
       `${item.productName} x${item.quantity}`
@@ -172,7 +150,7 @@ export async function sendProductDeliveryEmail(order: Order) {
         <p>For immediate assistance, please contact us at (+880) 183-9545699</p>
         
         <p style="margin-top: 2rem; color: #6b7280; font-size: 0.875rem;">
-          Thank you for choosing BD TechPark!
+          Thank you for choosing SadaqahExpress!
         </p>
       </div>
     `;

@@ -483,5 +483,48 @@ export class RedisStorage implements IStorage {
   }
 }
 
-// Initialize storage
-export const storage = new RedisStorage();
+// Storage proxy: try Redis, fall back to in-memory storage if Redis is unavailable
+class StorageProxy implements IStorage {
+  private active: IStorage;
+
+  constructor() {
+    // default to in-memory until connect() is called
+    this.active = new MemStorage();
+  }
+
+  async connect(): Promise<void> {
+    try {
+      const redisStore = new RedisStorage();
+      // attempt to connect to Redis with a timeout
+      const connectPromise = redisStore.connect();
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Redis connect timeout')), 5000));
+      await Promise.race([connectPromise, timeout]);
+      this.active = redisStore;
+      console.log('Storage: connected to Redis and will use RedisStorage');
+    } catch (err) {
+      console.warn('Storage: failed to connect to Redis, falling back to MemStorage:', err);
+      this.active = new MemStorage();
+    }
+  }
+
+  // Product methods
+  async getAllProducts(): Promise<Product[]> { return this.active.getAllProducts(); }
+  async getProductById(id: number): Promise<Product | undefined> { return this.active.getProductById(id); }
+  async getProductsByCategory(category: string): Promise<Product[]> { return this.active.getProductsByCategory(category); }
+  async createProduct(product: InsertProduct): Promise<Product> { return this.active.createProduct(product); }
+  async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> { return this.active.updateProduct(id, product); }
+  async deleteProduct(id: number): Promise<boolean> { return this.active.deleteProduct(id); }
+
+  // Order methods
+  async getAllOrders(): Promise<Order[]> { return this.active.getAllOrders(); }
+  async getOrderById(id: string): Promise<Order | undefined> { return this.active.getOrderById(id); }
+  async createOrder(order: InsertOrder): Promise<Order> { return this.active.createOrder(order); }
+  async updateOrderStatus(id: string, status: Order['status']): Promise<Order | undefined> { return this.active.updateOrderStatus(id, status); }
+
+  // User methods
+  async getUser(id: string): Promise<User | undefined> { return this.active.getUser(id); }
+  async getUserByUsername(username: string): Promise<User | undefined> { return this.active.getUserByUsername(username); }
+  async createUser(user: InsertUser): Promise<User> { return this.active.createUser(user); }
+}
+
+export const storage = new StorageProxy();

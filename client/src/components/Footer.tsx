@@ -27,11 +27,8 @@ export function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="h-10 w-10 bg-primary rounded-md flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-lg">BD</span>
-                </div>
                 <div>
-                  <h3 className="font-bold text-lg font-serif">TechPark</h3>
+                  <h3 className="font-bold text-lg font-serif">SadaqahExpress</h3>
                   <p className="text-xs text-muted-foreground">Digital Products</p>
                 </div>
               </div>
@@ -93,10 +90,10 @@ export function Footer() {
         <div className="border-t py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2025 BD TechPark. All rights reserved.
+              © {new Date().getFullYear()} SadaqahExpress. All rights reserved.
             </p>
             <p className="text-sm text-muted-foreground">
-              Hotline: (+880) 183-9545699
+              Hotline: (+880) 123-4567890
             </p>
           </div>
         </div>

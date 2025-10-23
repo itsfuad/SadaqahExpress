@@ -5,6 +5,7 @@ import { CategoryNav } from "@/components/CategoryNav";
 import { HeroCarousel, type CarouselSlide } from "@/components/HeroCarousel";
 import { ProductCard, type Product } from "@/components/ProductCard";
 import { ShoppingCart, type CartItem } from "@/components/ShoppingCart";
+import { SearchDialog } from "@/components/SearchDialog";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +16,8 @@ import heroImage3 from '@assets/generated_images/YouTube_Premium_hero_banner_0af
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [cartOpen, setCartOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
 
@@ -45,6 +48,16 @@ export default function Home() {
     },
   ];
 
+  // Fetch all products for search
+  const { data: allProducts = [] } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+    queryFn: async () => {
+      const response = await fetch("/api/products");
+      if (!response.ok) throw new Error("Failed to fetch products");
+      return response.json();
+    },
+  });
+
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", activeCategory],
     queryFn: async () => {
@@ -56,6 +69,16 @@ export default function Home() {
       return response.json();
     },
   });
+
+  // Filter products based on search query for inline search
+  const filteredProducts = searchQuery.trim() 
+    ? products.filter((product) => {
+        const query = searchQuery.toLowerCase().trim();
+        return (
+          product.name.toLowerCase().includes(query)
+        );
+      })
+    : products;
 
   const handleAddToCart = (product: Product) => {
     const existingItem = cartItems.find(item => item.id === product.id);
@@ -115,19 +138,41 @@ export default function Home() {
       <Header 
         cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
         onCartClick={() => setCartOpen(true)}
-        onSearchClick={() => toast({ title: "Search", description: "Search functionality coming soon!" })}
+        onSearchClick={() => setSearchOpen(true)}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={() => {
+          if (searchQuery.trim()) {
+            // Search is handled by filtering inline
+            toast({
+              title: "Search",
+              description: `Showing results for "${searchQuery}"`,
+            });
+          }
+        }}
       />
       <CategoryNav 
         activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
+        onCategoryChange={(category) => {
+          setActiveCategory(category);
+          setSearchQuery(""); // Clear search when changing category
+        }}
       />
       <HeroCarousel slides={carouselSlides} />
       
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-6">
-            <h2 className="text-2xl md:text-3xl font-bold font-serif mb-2">Top Selling Products</h2>
-            <p className="text-muted-foreground">Browse our most popular digital products</p>
+            <h2 className="text-2xl md:text-3xl font-bold font-serif mb-2">
+              {searchQuery.trim() 
+                ? `Search Results for "${searchQuery}"` 
+                : "Top Selling Products"}
+            </h2>
+            <p className="text-muted-foreground">
+              {searchQuery.trim()
+                ? `Found ${filteredProducts.length} ${filteredProducts.length === 1 ? 'product' : 'products'}`
+                : "Browse our most popular digital products"}
+            </p>
           </div>
           
           {isLoading ? (
@@ -136,20 +181,24 @@ export default function Home() {
                 <div key={i} className="h-96 bg-muted animate-pulse rounded-md" />
               ))}
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="text-center">
-                <h3 className="text-xl font-semibold mb-2">No products available</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  {searchQuery.trim() ? "No products found" : "No products available"}
+                </h3>
                 <p className="text-muted-foreground">
-                  {activeCategory === "all" 
-                    ? "There are no products available at the moment." 
-                    : "No products found in this category."}
+                  {searchQuery.trim() 
+                    ? `No products match "${searchQuery}". Try a different search term.`
+                    : activeCategory === "all" 
+                      ? "There are no products available at the moment." 
+                      : "No products found in this category."}
                 </p>
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -170,6 +219,13 @@ export default function Home() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={handleCheckout}
+      />
+
+      <SearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        products={allProducts}
+        onAddToCart={handleAddToCart}
       />
     </div>
   );
