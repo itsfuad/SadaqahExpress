@@ -125,7 +125,7 @@ export function ShoppingCart({
             <div className="border-t p-4 space-y-4">
               <div className="flex items-center justify-between text-lg">
                 <span className="font-semibold">Total:</span>
-                <span className="text-2xl font-bold" data-id="text-cart-total">
+                <span className="text-2x font-bold" data-id="text-cart-total">
                   ৳ {total.toFixed(2)}
                 </span>
               </div>

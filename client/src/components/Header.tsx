@@ -166,7 +166,7 @@ export function Header({
               {cartItemCount > 0 && (
                 <Badge 
                   variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  className="no-default-hover-elevate absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
                   data-id="badge-cart-count"
                 >
                   {cartItemCount}

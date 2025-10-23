@@ -38,10 +38,12 @@ export default function Checkout() {
         title: "Order Submitted Successfully!",
         description: "Check your email for order confirmation and payment instructions.",
       });
-      
+
+      // clear form
+      setCartItems([]);
       setTimeout(() => {
         window.location.href = "/";
-      }, 2500);
+      }, 500);
     },
     onError: (error: any) => {
       toast({
