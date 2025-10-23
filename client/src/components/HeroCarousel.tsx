@@ -83,25 +83,23 @@ export function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCarouselPr
         </div>
       ))}
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-black/30 hover:bg-black/50 text-white"
+      {/* Left navigation button */}
+      <button
         onClick={prevSlide}
-        data-testid="button-carousel-prev"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all"
+        aria-label="Previous slide"
       >
-        <ChevronLeft className="h-6 w-6" />
-      </Button>
+        <ChevronLeft className="w-6 h-6" />
+      </button>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-black/30 hover:bg-black/50 text-white"
+      {/* Right navigation button */}
+      <button
         onClick={nextSlide}
-        data-testid="button-carousel-next"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all"
+        aria-label="Next slide"
       >
-        <ChevronRight className="h-6 w-6" />
-      </Button>
+        <ChevronRight className="w-6 h-6" />
+      </button>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
         {slides.map((_, index) => (

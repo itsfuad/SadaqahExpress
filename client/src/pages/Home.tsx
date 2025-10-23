@@ -166,7 +166,7 @@ export default function Home() {
             <h2 className="text-2xl md:text-3xl font-bold font-serif mb-2">
               {searchQuery.trim() 
                 ? `Search Results for "${searchQuery}"` 
-                : "Top Selling Products"}
+                : "Browse Products"}
             </h2>
             <p className="text-muted-foreground">
               {searchQuery.trim()
