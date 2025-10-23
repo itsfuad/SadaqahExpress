@@ -36,29 +36,30 @@ export function SearchDialog({ open, onOpenChange, products, onAddToCart }: Sear
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 rounded-lg sm:rounded-lg [&>button]:hidden">
+        <DialogHeader className="px-2 pt-2 pb-2 border-b">
           <DialogTitle className="sr-only">Search Products</DialogTitle>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              type="search"
-              placeholder="Search for products..."
-              className="pl-10 pr-10 w-full text-base"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              autoFocus
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                onClick={handleClear}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="search"
+                placeholder="Search for products..."
+                className="pl-10 pr-4 w-full text-base"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              onClick={() => onOpenChange(false)}
+              title="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </DialogHeader>
 

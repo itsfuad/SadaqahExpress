@@ -2,11 +2,9 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
-import { CategoryNav } from "@/components/CategoryNav";
 import { HeroCarousel, type CarouselSlide } from "@/components/HeroCarousel";
 import { ProductCard, type Product } from "@/components/ProductCard";
 import { ShoppingCart, type CartItem } from "@/components/ShoppingCart";
-import { SearchDialog } from "@/components/SearchDialog";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +15,6 @@ import heroImage3 from '@assets/generated_images/YouTube_Premium_hero_banner_0af
 export default function Home() {
   const [location, setLocation] = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
 
@@ -159,7 +156,6 @@ export default function Home() {
       <Header 
         cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
         onCartClick={() => setCartOpen(true)}
-        onSearchClick={() => setSearchOpen(true)}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={() => {
@@ -171,8 +167,6 @@ export default function Home() {
             });
           }
         }}
-      />
-      <CategoryNav 
         activeCategory={activeCategory}
         onCategoryChange={(category) => {
           setActiveCategory(category);
@@ -240,13 +234,6 @@ export default function Home() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={handleCheckout}
-      />
-
-      <SearchDialog
-        open={searchOpen}
-        onOpenChange={setSearchOpen}
-        products={allProducts}
-        onAddToCart={handleAddToCart}
       />
     </div>
   );

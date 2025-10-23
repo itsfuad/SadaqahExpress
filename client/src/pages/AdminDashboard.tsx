@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, ShoppingBag, DollarSign, Users } from "lucide-react";
+import { Package, ShoppingBag, DollarSign, Users, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Order, Product } from "@shared/schema";
 import {
@@ -26,6 +26,15 @@ export default function AdminDashboard() {
       window.location.href = "/admin";
     }
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin");
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
+    window.location.href = "/";
+  };
 
   const { data: orders = [] } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -96,9 +105,20 @@ export default function AdminDashboard() {
       />
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold font-serif mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage your digital products store</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold font-serif mb-2">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Manage your digital products store</p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="gap-2"
+            data-testid="button-logout"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

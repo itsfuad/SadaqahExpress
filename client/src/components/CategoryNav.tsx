@@ -31,7 +31,7 @@ export function CategoryNav({ activeCategory = "all", onCategoryChange }: Catego
   return (
     <div className="w-full bg-primary">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
+        <div className="flex items-center gap-2 overflow-x-auto py-2 scrollbar-hide">
           {categories.map((category) => {
             const Icon = category.icon;
             const isActive = activeCategory === category.id;
@@ -39,9 +39,11 @@ export function CategoryNav({ activeCategory = "all", onCategoryChange }: Catego
             return (
               <Button
                 key={category.id}
-                variant={isActive ? "secondary" : "ghost"}
-                className={`whitespace-nowrap gap-2 text-primary-foreground hover:text-primary-foreground ${
-                  isActive ? 'text-foreground' : ''
+                variant="ghost"
+                className={`whitespace-nowrap gap-2 rounded-md transition-all ${
+                  isActive 
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                    : 'bg-primary/70 text-primary-foreground hover:bg-primary/80'
                 }`}
                 onClick={() => onCategoryChange?.(category.id)}
                 data-testid={`button-category-${category.id}`}

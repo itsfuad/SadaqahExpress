@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,6 +25,14 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const admin = localStorage.getItem("admin");
+    if (admin) {
+      window.location.href = "/admin/dashboard";
+    }
+  }, []);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
