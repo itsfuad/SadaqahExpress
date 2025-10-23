@@ -204,12 +204,22 @@ export class RedisStorage implements IStorage {
   private nextProductId: number = 1;
 
   constructor() {
+    // Parse host and port from REDIS_HOST if it contains a colon
+    const redisHost = process.env.REDIS_HOST || '';
+    const [host, hostPort] = redisHost.includes(':') 
+      ? redisHost.split(':') 
+      : [redisHost, ''];
+    
+    const port = hostPort 
+      ? parseInt(hostPort) 
+      : parseInt(process.env.REDIS_PORT || '12110');
+
     this.client = createClient({
       username: 'default',
       password: process.env.REDIS_PASSWORD,
       socket: {
-        host: process.env.REDIS_HOST,
-        port: parseInt(process.env.REDIS_PORT || '12110')
+        host: host,
+        port: port
       }
     });
 
