@@ -107,8 +107,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order routes
   app.get("/api/orders", async (req, res) => {
     try {
-      const orders = await storage.getAllOrders();
-      res.json(orders);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string || "";
+      const searchBy = req.query.searchBy as string || "orderId";
+      const sortBy = req.query.sortBy as string || "createdAt";
+      const sortOrder = req.query.sortOrder as string || "desc";
+
+      const allOrders = await storage.getAllOrders();
+      
+      // Filter orders based on search
+      let filteredOrders = allOrders;
+      if (search.trim()) {
+        filteredOrders = allOrders.filter(order => {
+          const searchLower = search.toLowerCase();
+          switch (searchBy) {
+            case "orderId":
+              return order.id.toLowerCase().includes(searchLower);
+            case "customerName":
+              return order.customerName.toLowerCase().includes(searchLower);
+            case "customerEmail":
+              return order.customerEmail.toLowerCase().includes(searchLower);
+            default:
+              return order.id.toLowerCase().includes(searchLower);
+          }
+        });
+      }
+
+      // Sort orders
+      filteredOrders.sort((a, b) => {
+        let aVal: any, bVal: any;
+        switch (sortBy) {
+          case "orderId":
+            aVal = a.id;
+            bVal = b.id;
+            break;
+          case "customerName":
+            aVal = a.customerName.toLowerCase();
+            bVal = b.customerName.toLowerCase();
+            break;
+          case "customerEmail":
+            aVal = a.customerEmail.toLowerCase();
+            bVal = b.customerEmail.toLowerCase();
+            break;
+          case "createdAt":
+          default:
+            aVal = new Date(a.createdAt).getTime();
+            bVal = new Date(b.createdAt).getTime();
+        }
+        
+        if (sortOrder === "asc") {
+          return aVal > bVal ? 1 : -1;
+        } else {
+          return aVal < bVal ? 1 : -1;
+        }
+      });
+
+      // Paginate
+      const total = filteredOrders.length;
+      const totalPages = Math.ceil(total / limit);
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+      res.json({
+        orders: paginatedOrders,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      });
     } catch (error) {
       console.error("Error fetching orders:", error);
       res.status(500).json({ error: "Failed to fetch orders" });
@@ -160,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/orders/:id/status", async (req, res) => {
     try {
       const { status } = req.body;
-      if (!["pending", "completed", "cancelled"].includes(status)) {
+      if (!["received", "processing", "completed", "cancelled"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
       }
 
@@ -169,17 +239,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Order not found" });
       }
 
-      // Send delivery email when order is completed
-      if (status === "completed") {
-        (async () => {
-          try {
-            const { sendProductDeliveryEmail } = await import("./email");
-            await sendProductDeliveryEmail(order);
-          } catch (emailError) {
-            console.error("Failed to send delivery email:", emailError);
-          }
-        })();
-      }
+      // Product delivery email is disabled for now
+      // if (status === "completed") {
+      //   (async () => {
+      //     try {
+      //       const { sendProductDeliveryEmail } = await import("./email");
+      //       await sendProductDeliveryEmail(order);
+      //     } catch (emailError) {
+      //       console.error("Failed to send delivery email:", emailError);
+      //     }
+      //   })();
+      // }
 
       res.json(order);
     } catch (error) {
@@ -205,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: 1,
         }],
         total: 400,
-        status: "pending" as const,
+        status: "received" as const,
         createdAt: new Date().toISOString(),
       };
       

@@ -162,7 +162,7 @@ export class MemStorage implements IStorage {
     const order: Order = {
       id,
       ...insertOrder,
-      status: "pending",
+      status: "received",
       createdAt: new Date().toISOString(),
     };
     this.orders.set(id, order);
@@ -449,7 +449,7 @@ export class RedisStorage implements IStorage {
     const order: Order = {
       id,
       ...insertOrder,
-      status: "pending",
+      status: "received",
       createdAt: new Date().toISOString(),
     };
     

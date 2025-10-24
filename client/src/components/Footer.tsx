@@ -1,5 +1,6 @@
 import { Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 export function Footer() {
   const categories = [
@@ -11,14 +12,23 @@ export function Footer() {
     "Editing Software",
   ];
 
+  // const quickLinks = [
+  //   "Track Your Order",
+  //   "About Us",
+  //   "Contact Us",
+  //   "Privacy Policy",
+  //   "Terms & Conditions",
+  //   "Return Policy",
+  // ];
+
   const quickLinks = [
-    "Track Your Order",
-    "About Us",
-    "Contact Us",
-    "Privacy Policy",
-    "Terms & Conditions",
-    "Return Policy",
-  ];
+    { id: "/track-order", label: "Track Your Order" },
+    { id: "#", label: "About Us" },
+    { id: "#", label: "Contact Us" },
+    { id: "#", label: "Privacy Policy" },
+    { id: "#", label: "Terms & Conditions" },
+    { id: "#", label: "Return Policy" },
+  ]
 
   return (
     <footer className="bg-muted mt-12">
@@ -73,13 +83,12 @@ export function Footer() {
               <ul className="space-y-2">
                 {quickLinks.map((link, index) => (
                   <li key={index}>
-                    <a
-                      href="#"
+                    <Link
+                      href={link.id}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      data-id={`link-quick-${index}`}
                     >
-                      {link}
-                    </a>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

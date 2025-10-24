@@ -4,11 +4,10 @@ import { queryClient } from "@/lib/queryClient";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Package, ShoppingBag, DollarSign, Users, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import type { Order, Product } from "@shared/schema";
+import type { Product, Order } from "@shared/schema";
 import {
   Table,
   TableBody,
@@ -38,38 +37,27 @@ export default function AdminDashboard() {
     setLocation("/");
   };
 
-  const { data: orders = [] } = useQuery<Order[]>({
-    queryKey: ["/api/orders"],
+  // Fetch all orders without pagination for dashboard stats
+  const { data: ordersResponse } = useQuery({
+    queryKey: ["/api/orders", "all"],
+    queryFn: async () => {
+      const response = await fetch("/api/orders?limit=1000");
+      if (!response.ok) throw new Error("Failed to fetch orders");
+      return response.json();
+    },
   });
+
+  const orders: Order[] = ordersResponse?.orders || [];
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
-  const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      const response = await fetch(`/api/orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) throw new Error("Failed to update order status");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      toast({
-        title: "Order updated",
-        description: "Order status has been updated successfully.",
-      });
-    },
-  });
-
   const totalRevenue = orders
-    .filter(o => o.status === "completed")
-    .reduce((sum, o) => sum + o.total, 0);
+    .filter((o: Order) => o.status === "completed")
+    .reduce((sum: number, o: Order) => sum + o.total, 0);
 
-  const uniqueCustomers = new Set(orders.map(o => o.customerEmail)).size;
+  const uniqueCustomers = new Set(orders.map((o: Order) => o.customerEmail)).size;
 
   const stats = [
     {
@@ -82,7 +70,7 @@ export default function AdminDashboard() {
       title: "Total Orders",
       value: orders.length.toString(),
       icon: ShoppingBag,
-      change: `${orders.filter(o => o.status === "pending").length} pending`,
+      change: `${orders.filter((o: Order) => o.status === "received" || o.status === "processing").length} active`,
     },
     {
       title: "Revenue",
@@ -101,8 +89,6 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header 
-        cartItemCount={0}
-        onCartClick={() => {}}
         onSearchClick={() => {}}
       />
       
@@ -145,12 +131,27 @@ export default function AdminDashboard() {
           })}
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Button onClick={() => setLocation("/admin/products")} variant="outline" className="h-20">
+            <div className="text-left">
+              <div className="font-semibold">Manage Products</div>
+              <div className="text-sm text-muted-foreground">Add, edit, or remove products</div>
+            </div>
+          </Button>
+          <Button onClick={() => setLocation("/admin/orders")} variant="outline" className="h-20">
+            <div className="text-left">
+              <div className="font-semibold">Manage Orders</div>
+              <div className="text-sm text-muted-foreground">View and update order status</div>
+            </div>
+          </Button>
+        </div>
+
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <CardTitle>Recent Orders</CardTitle>
-              <Button onClick={() => setLocation("/admin/products")} data-id="button-manage-products">
-                Manage Products
+              <Button onClick={() => setLocation("/admin/orders")} variant="outline" size="sm">
+                View All
               </Button>
             </div>
           </CardHeader>
@@ -160,67 +161,62 @@ export default function AdminDashboard() {
                 <TableRow>
                   <TableHead>Order ID</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Items</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       No orders yet
                     </TableCell>
                   </TableRow>
                 ) : (
-                  orders.slice(0, 10).map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-mono text-sm" data-id={`text-order-${order.id}`}>
-                        {order.id}
-                      </TableCell>
-                      <TableCell>{order.customerName}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {order.customerEmail}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {order.items.map(item => item.productName).join(", ")}
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        ৳{order.total.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={order.status === "completed" ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}
-                          data-id={`badge-status-${order.id}`}
-                        >
-                          {order.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {order.status === "pending" ? (
-                          <Button 
-                            size="sm"
-                            onClick={() => updateOrderStatusMutation.mutate({ 
-                              orderId: order.id, 
-                              status: "completed" 
-                            })}
-                            className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 border-0"
-                            data-id={`button-complete-${order.id}`}
+                  orders.slice(0, 5).map((order: Order) => {
+                    const getStatusColor = (status: string) => {
+                      switch (status) {
+                        case "completed":
+                          return "text-green-600 dark:text-green-400";
+                        case "processing":
+                          return "text-blue-600 dark:text-blue-400";
+                        case "received":
+                          return "text-yellow-600 dark:text-yellow-400";
+                        case "cancelled":
+                          return "text-red-600 dark:text-red-400";
+                        default:
+                          return "text-muted-foreground";
+                      }
+                    };
+
+                    return (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-mono text-sm" data-id={`text-order-${order.id}`}>
+                          {order.id}
+                        </TableCell>
+                        <TableCell>{order.customerName}</TableCell>
+                        <TableCell className="text-sm">
+                          {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          ৳{order.total.toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={getStatusColor(order.status)}
+                            data-id={`badge-status-${order.id}`}
                           >
-                            Complete
-                          </Button>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

@@ -4,15 +4,21 @@ import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { Footer } from "@/components/Footer";
-import { ShoppingCart, type CartItem } from "@/components/ShoppingCart";
 import { useToast } from "@/hooks/use-toast";
+
+interface CartItem {
+  id: number;
+  name: string;
+  image: string;
+  price: number;
+  quantity: number;
+}
 
 export default function Checkout() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
@@ -49,9 +55,10 @@ export default function Checkout() {
   useEffect(() => {
     if (cartItems.length > 0) {
       localStorage.setItem("cart", JSON.stringify(cartItems));
+      window.dispatchEvent(new Event("cartUpdated"));
     } else if (!isLoading) {
-      // Cart became empty during checkout (user removed all items)
       localStorage.removeItem("cart");
+      window.dispatchEvent(new Event("cartUpdated"));
       toast({
         title: "Cart is empty",
         description: "Redirecting to home page...",
@@ -62,20 +69,6 @@ export default function Checkout() {
       }, 1500);
     }
   }, [cartItems, isLoading]);
-
-  const handleUpdateQuantity = (id: number, quantity: number) => {
-    setCartItems(cartItems.map(item =>
-      item.id === id ? { ...item, quantity } : item
-    ));
-  };
-
-  const handleRemoveItem = (id: number) => {
-    setCartItems(cartItems.filter(item => item.id !== id));
-    toast({
-      title: "Removed from cart",
-      description: "Item has been removed from your cart.",
-    });
-  };
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -91,12 +84,11 @@ export default function Checkout() {
     },
     onSuccess: () => {
       localStorage.removeItem("cart");
+      window.dispatchEvent(new Event("cartUpdated"));
       toast({
         title: "Order Submitted Successfully!",
         description: "Check your email for order confirmation and payment instructions.",
       });
-
-      // Clear cart items in state
       setCartItems([]);
       
       // Redirect to home after a short delay
@@ -150,11 +142,7 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header 
-        cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-        onCartClick={() => setCartOpen(true)}
-        onSearchClick={() => {}}
-      />
+      <Header onSearchClick={() => {}} />
       
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4 mb-6">
@@ -169,21 +157,6 @@ export default function Checkout() {
       </main>
 
       <Footer />
-
-      <ShoppingCart
-        isOpen={cartOpen}
-        items={cartItems}
-        onClose={() => setCartOpen(false)}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={() => {
-          setCartOpen(false);
-          toast({
-            title: "Already on checkout",
-            description: "Complete the form below to place your order.",
-          });
-        }}
-      />
     </div>
   );
 }

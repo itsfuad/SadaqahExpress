@@ -233,15 +233,13 @@ export default function ManageProducts() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header 
-        cartItemCount={0}
-        onCartClick={() => {}}
         onSearchClick={() => {}}
       />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => setLocation("/admin/dashboard")}
             className="mb-4 gap-2"
           >

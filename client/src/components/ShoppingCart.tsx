@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { createPortal } from "react-dom";
 
 export interface CartItem {
   id: number;
@@ -33,14 +34,17 @@ export function ShoppingCart({
 
   if (!isOpen) return null;
 
-  return (
-    <>
+  const cartContent = (
+    <div className="fixed inset-0 z-50">
+      {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+        className="fixed inset-0 bg-black/80"
         onClick={onClose}
         data-id="cart-overlay"
       />
-      <div className="fixed right-0 top-0 h-full w-full sm:w-96 bg-background z-50 shadow-xl flex flex-col">
+      
+      {/* Cart Panel */}
+      <div className="fixed right-0 top-0 bottom-0 h-full w-full sm:w-96 bg-background border-l shadow-xl flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-bold">Your Cart</h2>
           <Button
@@ -125,7 +129,7 @@ export function ShoppingCart({
             <div className="border-t p-4 space-y-4">
               <div className="flex items-center justify-between text-lg">
                 <span className="font-semibold">Total:</span>
-                <span className="text-2x font-bold" data-id="text-cart-total">
+                <span className="text-2xl font-bold" data-id="text-cart-total">
                   ৳ {total.toFixed(2)}
                 </span>
               </div>
@@ -141,6 +145,9 @@ export function ShoppingCart({
           </>
         )}
       </div>
-    </>
+    </div>
   );
+
+  // Render using portal to document body to escape header's z-index stacking
+  return createPortal(cartContent, document.body);
 }

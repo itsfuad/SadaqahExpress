@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { HeroCarousel, type CarouselSlide } from "@/components/HeroCarousel";
 import { ProductCard, type Product } from "@/components/ProductCard";
-import { ShoppingCart, type CartItem } from "@/components/ShoppingCart";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,36 +11,7 @@ import heroImage2 from '@assets/generated_images/Office_2021_hero_banner_5189d70
 import heroImage3 from '@assets/generated_images/YouTube_Premium_hero_banner_0af84554.png';
 
 export default function Home() {
-  const [, setLocation] = useLocation();
-  const [cartOpen, setCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
-
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      try {
-        setCartItems(JSON.parse(savedCart));
-      } catch (error) {
-        console.error("Failed to parse cart from localStorage:", error);
-        localStorage.removeItem("cart");
-      }
-    }
-  }, []);
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    if (cartItems.length > 0) {
-      localStorage.setItem("cart", JSON.stringify(cartItems));
-    } else {
-      // Only remove if explicitly empty, not on initial load
-      const savedCart = localStorage.getItem("cart");
-      if (savedCart && cartItems.length === 0) {
-        localStorage.removeItem("cart");
-      }
-    }
-  }, [cartItems]);
 
   // Get URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -125,23 +94,34 @@ export default function Home() {
     : products;
 
   const handleAddToCart = (product: Product) => {
-    const existingItem = cartItems.find(item => item.id === product.id);
+    // Get current cart from localStorage
+    const savedCart = localStorage.getItem("cart");
+    const currentCart = savedCart ? JSON.parse(savedCart) : [];
     
+    const existingItem = currentCart.find((item: any) => item.id === product.id);
+    
+    let updatedCart;
     if (existingItem) {
-      setCartItems(cartItems.map(item =>
+      updatedCart = currentCart.map((item: any) =>
         item.id === product.id
           ? { ...item, quantity: item.quantity + 1 }
           : item
-      ));
+      );
     } else {
-      setCartItems([...cartItems, {
+      updatedCart = [...currentCart, {
         id: product.id,
         name: product.name,
         image: product.image,
         price: product.price,
         quantity: 1,
-      }]);
+      }];
     }
+
+    // Save to localStorage
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    
+    // Notify Header to update
+    window.dispatchEvent(new Event("cartUpdated"));
 
     toast({
       title: "Added to cart",
@@ -149,44 +129,13 @@ export default function Home() {
     });
   };
 
-  const handleUpdateQuantity = (id: number, quantity: number) => {
-    setCartItems(cartItems.map(item =>
-      item.id === id ? { ...item, quantity } : item
-    ));
-  };
-
-  const handleRemoveItem = (id: number) => {
-    setCartItems(cartItems.filter(item => item.id !== id));
-    toast({
-      title: "Removed from cart",
-      description: "Item has been removed from your cart.",
-    });
-  };
-
-  const handleCheckout = () => {
-    if (cartItems.length === 0) {
-      toast({
-        title: "Cart is empty",
-        description: "Please add items to your cart before checking out.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Cart is already saved to localStorage via useEffect
-    setLocation("/checkout");
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header 
-        cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-        onCartClick={() => setCartOpen(true)}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={() => {
           if (searchQuery.trim()) {
-            // Search is handled by filtering inline
             toast({
               title: "Search",
               description: `Showing results for "${searchQuery}"`,
@@ -196,7 +145,7 @@ export default function Home() {
         activeCategory={activeCategory}
         onCategoryChange={(category) => {
           setActiveCategory(category);
-          setSearchQuery(""); // Clear search when changing category
+          setSearchQuery("");
         }}
       />
       <HeroCarousel slides={carouselSlides} />
@@ -252,15 +201,6 @@ export default function Home() {
       </main>
 
       <Footer />
-      
-      <ShoppingCart
-        isOpen={cartOpen}
-        items={cartItems}
-        onClose={() => setCartOpen(false)}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleCheckout}
-      />
     </div>
   );
 }

@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
+import { ShoppingCart as ShoppingCartPanel, type CartItem } from "@/components/ShoppingCart";
+import { useToast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -14,8 +16,6 @@ import {
 } from "@/components/ui/select";
 
 interface HeaderProps {
-  cartItemCount?: number;
-  onCartClick?: () => void;
   onSearchClick?: () => void;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
@@ -38,8 +38,6 @@ const categories = [
 ];
 
 export function Header({ 
-  cartItemCount = 0, 
-  onCartClick, 
   onSearchClick,
   searchValue = "",
   onSearchChange,
@@ -50,11 +48,68 @@ export function Header({
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  // Cart state - managed inside Header
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Load cart from localStorage
+  useEffect(() => {
+    const loadCart = () => {
+      const savedCart = localStorage.getItem("cart");
+      if (savedCart) {
+        try {
+          setCartItems(JSON.parse(savedCart));
+        } catch (error) {
+          console.error("Failed to parse cart:", error);
+        }
+      }
+    };
+
+    loadCart();
+
+    // Listen for cart updates
+    const handleCartUpdate = () => loadCart();
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    
+    return () => window.removeEventListener("cartUpdated", handleCartUpdate);
+  }, []);
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
     setIsAdmin(!!admin);
   }, []);
+
+  // Cart handlers
+  const handleUpdateQuantity = (id: number, quantity: number) => {
+    const updatedCart = cartItems.map(item =>
+      item.id === id ? { ...item, quantity } : item
+    );
+    setCartItems(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
+
+  const handleRemoveItem = (id: number) => {
+    const updatedCart = cartItems.filter(item => item.id !== id);
+    setCartItems(updatedCart);
+    if (updatedCart.length > 0) {
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    } else {
+      localStorage.removeItem("cart");
+    }
+    window.dispatchEvent(new Event("cartUpdated"));
+    toast({
+      title: "Removed from cart",
+      description: "Item has been removed from your cart.",
+    });
+  };
+
+  const handleCheckout = () => {
+    setCartOpen(false);
+    setLocation("/checkout");
+  };
 
   const handleAdminClick = () => {
     setLocation("/admin/dashboard");
@@ -64,6 +119,8 @@ export function Header({
     setSearchExpanded(!searchExpanded);
   };
 
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg">
       <div className="container mx-auto px-4">
@@ -71,8 +128,8 @@ export function Header({
         <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
           <div className="flex items-center gap-2 min-w-0 flex-1 lg:flex-initial">
             {/* Logo - Full branding on desktop, icon only on mobile */}
-            <div
-              onClick={() => setLocation("/")}
+            <Link
+              href="/"
               className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3 shrink-0"
             >
               {/* Logo icon - always visible */}
@@ -87,7 +144,7 @@ export function Header({
                 <h1 className="text-xl font-bold font-serif leading-tight">SadaqahExpress</h1>
                 <p className="text-xs text-muted-foreground">Digital Products</p>
               </div>
-            </div>
+            </Link>
             
             <Select value={activeCategory} onValueChange={onCategoryChange}>
               <SelectTrigger className="flex-1 lg:w-[180px] min-w-0 ml-1 md:ml-4">
@@ -150,7 +207,7 @@ export function Header({
               variant="ghost"
               size="icon"
               className="relative"
-              onClick={onCartClick}
+              onClick={() => setCartOpen(true)}
               data-id="button-cart"
             >
               <ShoppingCart className="h-5 w-5" />
@@ -196,7 +253,7 @@ export function Header({
               variant="ghost"
               size="icon"
               className="relative"
-              onClick={onCartClick}
+              onClick={() => setCartOpen(true)}
               data-id="button-cart"
             >
               <ShoppingCart className="h-5 w-5" />
@@ -245,6 +302,16 @@ export function Header({
           </div>
         )}
       </div>
+
+      {/* Shopping Cart Panel - Renders wherever Header is present */}
+      <ShoppingCartPanel
+        isOpen={cartOpen}
+        items={cartItems}
+        onClose={() => setCartOpen(false)}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onCheckout={handleCheckout}
+      />
     </header>
   );
 }

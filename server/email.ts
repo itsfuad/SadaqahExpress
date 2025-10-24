@@ -46,7 +46,7 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
         <p>You will receive payment instructions via email shortly. Once payment is confirmed, we will deliver your digital products to this email address.</p>
         
         <p style="margin-top: 2rem; color: #6b7280; font-size: 0.875rem;">
-          If you have any questions, please contact us at (+880) 183-9545699
+          If you have any questions, please contact us at our Whatsapp or Telegram: 017 856 856 54
         </p>
         
         <p style="color: #6b7280; font-size: 0.875rem;">
@@ -136,7 +136,7 @@ export async function sendProductDeliveryEmail(order: Order) {
 
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #10b981;">Your Digital Products Are Ready!</h1>
+        <h1 style="color: #10b981;">Thank you for your purchase!</h1>
         <p>Dear ${order.customerName},</p>
         <p>Payment confirmed! Your digital products are now being delivered.</p>
         
@@ -147,7 +147,7 @@ export async function sendProductDeliveryEmail(order: Order) {
           <p style="margin: 0;"><strong>Important:</strong> Your product license keys and download instructions will be sent in a separate email within 24 hours. Please check your inbox and spam folder.</p>
         </div>
         
-        <p>For immediate assistance, please contact us at (+880) 183-9545699</p>
+        <p>For immediate assistance, please contact us at our Whatsapp or Telegram: 017 856 856 54
         
         <p style="margin-top: 2rem; color: #6b7280; font-size: 0.875rem;">
           Thank you for choosing SadaqahExpress!

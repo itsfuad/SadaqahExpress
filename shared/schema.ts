@@ -22,7 +22,7 @@ export interface Order {
   notes?: string;
   items: OrderItem[];
   total: number;
-  status: "pending" | "completed" | "cancelled";
+  status: "received" | "processing" | "completed" | "cancelled";
   createdAt: string;
 }
 
