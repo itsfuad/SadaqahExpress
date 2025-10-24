@@ -81,6 +81,7 @@ export default function ManageOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({
         title: "Status updated",
         description: "Order status has been updated successfully.",

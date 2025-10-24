@@ -222,6 +222,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof ZodError) {
         return res.status(400).json({ error: "Validation error", details: error.errors });
       }
+      // Handle stock errors specifically
+      if (error instanceof Error && error.message.includes("Insufficient stock")) {
+        return res.status(400).json({ error: error.message });
+      }
       console.error("Error creating order:", error);
       res.status(500).json({ error: "Failed to create order" });
     }
@@ -232,6 +236,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { status } = req.body;
       if (!["received", "processing", "completed", "cancelled"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
+      }
+
+      // Get the current order to check its current status
+      const currentOrder = await storage.getOrderById(req.params.id);
+      if (!currentOrder) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      const oldStatus = currentOrder.status;
+      const newStatus = status;
+
+      // Handle stock updates based on status changes
+      if (oldStatus !== "cancelled" && newStatus === "cancelled") {
+        // Order is being cancelled - restore stock
+        for (const item of currentOrder.items) {
+          try {
+            await storage.updateProductStock(item.productId, item.quantity);
+          } catch (error) {
+            console.error(`Failed to restore stock for product ${item.productId}:`, error);
+          }
+        }
+      } else if (oldStatus === "cancelled" && newStatus !== "cancelled") {
+        // Order is being uncancelled - decrease stock again
+        for (const item of currentOrder.items) {
+          try {
+            await storage.updateProductStock(item.productId, -item.quantity);
+          } catch (error) {
+            console.error(`Failed to decrease stock for product ${item.productId}:`, error);
+            return res.status(400).json({ 
+              error: "Insufficient stock to restore order", 
+              details: error instanceof Error ? error.message : String(error) 
+            });
+          }
+        }
       }
 
       const order = await storage.updateOrderStatus(req.params.id, status);

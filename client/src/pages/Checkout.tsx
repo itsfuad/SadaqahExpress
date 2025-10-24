@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { CheckoutForm } from "@/components/CheckoutForm";
@@ -17,6 +17,7 @@ interface CartItem {
 export default function Checkout() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -79,22 +80,28 @@ export default function Checkout() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
       });
-      if (!response.ok) throw new Error("Failed to create order");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Failed to create order" }));
+        throw new Error(errorData.error || errorData.details || "Failed to create order");
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (order) => {
       localStorage.removeItem("cart");
       window.dispatchEvent(new Event("cartUpdated"));
+      
+      // Invalidate products query to refresh stock data
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      
       toast({
         title: "Order Submitted Successfully!",
         description: "Check your email for order confirmation and payment instructions.",
       });
-      setCartItems([]);
       
-      // Redirect to home after a short delay
+      // Redirect to order tracking page with the order ID
       setTimeout(() => {
-        setLocation("/");
-      }, 2000);
+        setLocation(`/track-order/${order.id}`);
+      }, 1500);
     },
     onError: (error: any) => {
       toast({

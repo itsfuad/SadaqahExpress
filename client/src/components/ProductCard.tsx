@@ -13,6 +13,7 @@ export interface Product {
   reviewCount: number;
   badge?: string;
   category?: string;
+  stock: number;
 }
 
 interface ProductCardProps {
@@ -24,6 +25,8 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+  
+  const isOutOfStock = product.stock === 0;
 
   return (
     <Card className="overflow-hidden hover-elevate group transition-all duration-200">
@@ -33,7 +36,15 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           alt={product.name}
           className="w-full h-full object-cover"
         />
-        {discount > 0 && (
+        {isOutOfStock && (
+          <Badge 
+            className="absolute top-2 left-2 bg-destructive text-destructive-foreground"
+            data-id={`badge-out-of-stock-${product.id}`}
+          >
+            Out of Stock
+          </Badge>
+        )}
+        {!isOutOfStock && discount > 0 && (
           <Badge 
             className="absolute top-2 left-2 bg-chart-3 text-foreground"
             data-id={`badge-discount-${product.id}`}
@@ -61,10 +72,12 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         <Button
           className="w-full gap-2"
           onClick={() => onAddToCart?.(product)}
+          disabled={isOutOfStock}
+          variant={isOutOfStock ? "destructive" : "default"}
           data-id={`button-add-to-cart-${product.id}`}
         >
           <ShoppingCart className="h-4 w-4" />
-          Add to Cart
+          {isOutOfStock ? "Out of Stock" : "Add to Cart"}
         </Button>
       </CardFooter>
     </Card>

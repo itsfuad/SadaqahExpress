@@ -9,6 +9,7 @@ export interface IStorage {
   getProductsByCategory(category: string): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  updateProductStock(id: number, quantityChange: number): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<boolean>;
   
   // Order methods
@@ -142,6 +143,20 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async updateProductStock(id: number, quantityChange: number): Promise<Product | undefined> {
+    const product = this.products.get(id);
+    if (!product) return undefined;
+    
+    const newStock = product.stock + quantityChange;
+    if (newStock < 0) {
+      throw new Error(`Insufficient stock for product ${id}. Available: ${product.stock}, Requested: ${Math.abs(quantityChange)}`);
+    }
+    
+    const updated = { ...product, stock: newStock };
+    this.products.set(id, updated);
+    return updated;
+  }
+
   async deleteProduct(id: number): Promise<boolean> {
     return this.products.delete(id);
   }
@@ -158,6 +173,11 @@ export class MemStorage implements IStorage {
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    // Decrease stock for all products in the order
+    for (const item of insertOrder.items) {
+      await this.updateProductStock(item.productId, -item.quantity);
+    }
+    
     const id = `ORD-${Date.now()}-${randomUUID().slice(0, 8)}`;
     const order: Order = {
       id,
@@ -413,6 +433,25 @@ export class RedisStorage implements IStorage {
     return updated;
   }
 
+  async updateProductStock(id: number, quantityChange: number): Promise<Product | undefined> {
+    const product = await this.getProductById(id);
+    if (!product) return undefined;
+    
+    const newStock = product.stock + quantityChange;
+    if (newStock < 0) {
+      throw new Error(`Insufficient stock for product ${id}. Available: ${product.stock}, Requested: ${Math.abs(quantityChange)}`);
+    }
+    
+    const updated = { ...product, stock: newStock };
+    
+    const filteredUpdates = Object.fromEntries(
+      Object.entries(updated).filter(([_, value]) => value !== undefined)
+    );
+    
+    await this.client.hSet(`product:${id}`, filteredUpdates as any);
+    return updated;
+  }
+
   async deleteProduct(id: number): Promise<boolean> {
     const exists = await this.client.exists(`product:${id}`);
     if (!exists) return false;
@@ -445,6 +484,11 @@ export class RedisStorage implements IStorage {
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    // Decrease stock for all products in the order
+    for (const item of insertOrder.items) {
+      await this.updateProductStock(item.productId, -item.quantity);
+    }
+    
     const id = `ORD-${Date.now()}-${randomUUID().slice(0, 8)}`;
     const order: Order = {
       id,
@@ -525,6 +569,7 @@ class StorageProxy implements IStorage {
   async getProductsByCategory(category: string): Promise<Product[]> { return this.active.getProductsByCategory(category); }
   async createProduct(product: InsertProduct): Promise<Product> { return this.active.createProduct(product); }
   async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> { return this.active.updateProduct(id, product); }
+  async updateProductStock(id: number, quantityChange: number): Promise<Product | undefined> { return this.active.updateProductStock(id, quantityChange); }
   async deleteProduct(id: number): Promise<boolean> { return this.active.deleteProduct(id); }
 
   // Order methods
