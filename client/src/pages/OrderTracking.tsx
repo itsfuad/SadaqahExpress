@@ -96,22 +96,19 @@ export default function OrderTracking() {
               <p className="text-muted-foreground">Enter your order ID to check the status</p>
             </div>
 
-            <Card className="mb-8">
-              <CardContent className="pt-6">
-                <form onSubmit={handleSearch} className="flex gap-2">
-                  <Input
-                    type="text"
-                    placeholder="Enter your order ID (e.g., ORDER-123)"
-                    value={orderId}
-                    onChange={(e) => setOrderId(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button type="submit" disabled={isLoading}>
-                    <Search className="h-4 w-4 mr-2" />
-                    Track Order
-                  </Button>
-                </form>
-              </CardContent>
+            <Card className="mb-8 bg-transparent border-none">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Enter your order ID (e.g., ORDER-123)"
+                  value={orderId}
+                  onChange={(e) => setOrderId(e.target.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" disabled={isLoading} variant="outline">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
             </Card>
 
             {isLoading && (
