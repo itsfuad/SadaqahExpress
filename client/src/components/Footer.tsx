@@ -93,7 +93,7 @@ export function Footer() {
               © {new Date().getFullYear()} SadaqahExpress. All rights reserved.
             </p>
             <p className="text-sm text-muted-foreground">
-              Hotline: (+880) 123-4567890
+              Whatsapp & Telegram: +880 1785-685654
             </p>
           </div>
         </div>

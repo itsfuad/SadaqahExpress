@@ -13,10 +13,36 @@ import heroImage2 from '@assets/generated_images/Office_2021_hero_banner_5189d70
 import heroImage3 from '@assets/generated_images/YouTube_Premium_hero_banner_0af84554.png';
 
 export default function Home() {
-  const [location, setLocation] = useLocation();
+
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (error) {
+        console.error("Failed to parse cart from localStorage:", error);
+        localStorage.removeItem("cart");
+      }
+    }
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      localStorage.setItem("cart", JSON.stringify(cartItems));
+    } else {
+      // Only remove if explicitly empty, not on initial load
+      const savedCart = localStorage.getItem("cart");
+      if (savedCart && cartItems.length === 0) {
+        localStorage.removeItem("cart");
+      }
+    }
+  }, [cartItems]);
 
   // Get URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -147,7 +173,7 @@ export default function Home() {
       return;
     }
 
-    localStorage.setItem("cart", JSON.stringify(cartItems));
+    // Cart is already saved to localStorage via useEffect
     window.location.href = "/checkout";
   };
 

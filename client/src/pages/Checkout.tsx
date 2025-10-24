@@ -3,22 +3,77 @@ import { useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { Footer } from "@/components/Footer";
+import { ShoppingCart, type CartItem } from "@/components/ShoppingCart";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import type { CartItem } from "@/components/ShoppingCart";
 
 export default function Checkout() {
   const { toast } = useToast();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        setCartItems(parsedCart);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to parse cart from localStorage:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load cart. Please try again.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 2000);
+      }
     } else {
-      window.location.href = "/";
+      // No cart found, redirect to home
+      toast({
+        title: "Cart is empty",
+        description: "Please add items to your cart first.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1500);
     }
   }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      localStorage.setItem("cart", JSON.stringify(cartItems));
+    } else if (!isLoading) {
+      // Cart became empty during checkout (user removed all items)
+      localStorage.removeItem("cart");
+      toast({
+        title: "Cart is empty",
+        description: "Redirecting to home page...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1500);
+    }
+  }, [cartItems, isLoading]);
+
+  const handleUpdateQuantity = (id: number, quantity: number) => {
+    setCartItems(cartItems.map(item =>
+      item.id === id ? { ...item, quantity } : item
+    ));
+  };
+
+  const handleRemoveItem = (id: number) => {
+    setCartItems(cartItems.filter(item => item.id !== id));
+    toast({
+      title: "Removed from cart",
+      description: "Item has been removed from your cart.",
+    });
+  };
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -39,11 +94,13 @@ export default function Checkout() {
         description: "Check your email for order confirmation and payment instructions.",
       });
 
-      // clear form
+      // Clear cart items in state
       setCartItems([]);
+      
+      // Redirect to home after a short delay
       setTimeout(() => {
         window.location.href = "/";
-      }, 500);
+      }, 2000);
     },
     onError: (error: any) => {
       toast({
@@ -73,6 +130,18 @@ export default function Checkout() {
     createOrderMutation.mutate(orderData);
   };
 
+  // Show loading state while checking cart
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading checkout...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (cartItems.length === 0) {
     return null;
   }
@@ -80,8 +149,8 @@ export default function Checkout() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header 
-        cartItemCount={0}
-        onCartClick={() => {}}
+        cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+        onCartClick={() => setCartOpen(true)}
         onSearchClick={() => {}}
       />
       
@@ -98,6 +167,21 @@ export default function Checkout() {
       </main>
 
       <Footer />
+
+      <ShoppingCart
+        isOpen={cartOpen}
+        items={cartItems}
+        onClose={() => setCartOpen(false)}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onCheckout={() => {
+          setCartOpen(false);
+          toast({
+            title: "Already on checkout",
+            description: "Complete the form below to place your order.",
+          });
+        }}
+      />
     </div>
   );
 }
