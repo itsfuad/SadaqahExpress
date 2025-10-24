@@ -93,7 +93,7 @@ export function Footer() {
               © {new Date().getFullYear()} SadaqahExpress. All rights reserved.
             </p>
             <p className="text-sm text-muted-foreground">
-              Whatsapp & Telegram: +880 1785-685654
+              Whatsapp & Telegram: 017 856 856 54
             </p>
           </div>
         </div>

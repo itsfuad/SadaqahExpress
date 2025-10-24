@@ -27,6 +27,7 @@ interface HeaderProps {
 const categories = [
   { id: "all", label: "All Products" },
   { id: "microsoft", label: "Microsoft" },
+  { id: "ai", label: "AI Tools" },
   { id: "antivirus", label: "Anti Virus" },
   { id: "vpn", label: "VPN" },
   { id: "streaming", label: "Streaming" },
