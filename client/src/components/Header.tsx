@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, ShieldCheck } from "lucide-react";
+import { Search, ShoppingCart, ShieldCheck, PackageSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ShoppingCart as ShoppingCartPanel, type CartItem } from "@/components/ShoppingCart";
 import { useToast } from "@/hooks/use-toast";
+import { CATEGORIES } from "@/lib/categories";
 import {
   Select,
   SelectContent,
@@ -16,6 +17,8 @@ import {
 } from "@/components/ui/select";
 
 interface HeaderProps {
+  showSearch?: boolean;
+  showCategory?: boolean;
   onSearchClick?: () => void;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
@@ -24,20 +27,9 @@ interface HeaderProps {
   onCategoryChange?: (category: string) => void;
 }
 
-const categories = [
-  { id: "all", label: "All Products" },
-  { id: "microsoft", label: "Microsoft" },
-  { id: "ai", label: "AI Tools" },
-  { id: "antivirus", label: "Anti Virus" },
-  { id: "vpn", label: "VPN" },
-  { id: "streaming", label: "Streaming" },
-  { id: "educational", label: "Educational" },
-  { id: "editing", label: "Editing" },
-  { id: "music", label: "Music" },
-  { id: "utilities", label: "Utilities" },
-];
-
 export function Header({ 
+  showSearch = false,
+  showCategory = false,
   onSearchClick,
   searchValue = "",
   onSearchChange,
@@ -146,50 +138,65 @@ export function Header({
               </div>
             </Link>
             
-            <Select value={activeCategory} onValueChange={onCategoryChange}>
-              <SelectTrigger className="flex-1 lg:w-[180px] min-w-0 ml-1 md:ml-4">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-background">
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {showCategory && (
+              <Select value={activeCategory} onValueChange={onCategoryChange}>
+                <SelectTrigger className="flex-1 lg:w-[180px] min-w-0 ml-1 md:ml-4">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  {CATEGORIES.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Desktop search and right buttons - grouped together */}
           <div className="hidden lg:flex items-center gap-4">
             {/* Search form */}
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                onSearchSubmit?.();
-              }}
-              className="flex items-center gap-2"
-            >
-              <Input
-                type="search"
-                placeholder="Search products..."
-                className="w-[300px] h-10"
-                data-id="input-search-desktop"
-                value={searchValue}
-                onChange={(e) => onSearchChange?.(e.target.value)}
-              />
-              <Button 
-                type="submit"
-                variant="ghost" 
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                data-id="button-search-desktop"
+            {showSearch && (
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onSearchSubmit?.();
+                }}
+                className="flex items-center gap-2"
               >
-                <Search className="h-4 w-4" />
-              </Button>
-            </form>
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  className="w-[300px] h-10"
+                  data-id="input-search-desktop"
+                  value={searchValue}
+                  onChange={(e) => onSearchChange?.(e.target.value)}
+                />
+                <Button 
+                  type="submit"
+                  variant="ghost" 
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  data-id="button-search-desktop"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
+            )}
 
             <ThemeToggle />
+
+            {/* Track Order Button */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setLocation("/track-order")}
+              title="Track Order"
+              data-id="button-track-order"
+            >
+              <PackageSearch className="h-5 w-5" />
+            </Button>
 
             {isAdmin && (
               <Button
@@ -226,16 +233,29 @@ export function Header({
           {/* Mobile buttons - only shown on mobile */}
           <div className="flex lg:hidden items-center gap-1 sm:gap-2 shrink-0">
             {/* Search toggle button - mobile only */}
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleSearchToggle}
-              data-id="button-search-toggle"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
+            {showSearch && (
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleSearchToggle}
+                data-id="button-search-toggle"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            )}
 
             <ThemeToggle />
+
+            {/* Track Order Button - Mobile */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setLocation("/track-order")}
+              title="Track Order"
+              data-id="button-track-order"
+            >
+              <PackageSearch className="h-5 w-5" />
+            </Button>
 
             {isAdmin && (
               <Button
@@ -271,7 +291,7 @@ export function Header({
         </div>
 
         {/* Mobile expandable search bar - appears below when toggled, hidden on desktop */}
-        {searchExpanded && (
+        {showSearch && searchExpanded && (
           <div className="lg:hidden pb-3 animate-in slide-in-from-top-2 duration-200">
             <form 
               onSubmit={(e) => {
