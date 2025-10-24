@@ -65,12 +65,12 @@ export function Header({
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg">
       <div className="container mx-auto px-4">
         {/* Top row: Logo, Category, Icons */}
-        <div className="flex h-16 md:h-20 items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+        <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
+          <div className="flex items-center gap-2 min-w-0 flex-1 lg:flex-initial">
             {/* Logo - Full branding on desktop, icon only on mobile */}
             <a 
               href="/" 
-              className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3"
+              className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3 shrink-0"
             >
               {/* Logo icon - always visible */}
               <img 
@@ -87,7 +87,7 @@ export function Header({
             </a>
             
             <Select value={activeCategory} onValueChange={onCategoryChange}>
-              <SelectTrigger className="w-[180px] ml-2 md:ml-4">
+              <SelectTrigger className="flex-1 lg:w-[180px] min-w-0 ml-1 md:ml-4">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-background">
@@ -100,19 +100,20 @@ export function Header({
             </Select>
           </div>
 
-          {/* Desktop search - center, always visible */}
-          <div className="hidden lg:flex flex-1 max-w-xl mx-8">
+          {/* Desktop search and right buttons - grouped together */}
+          <div className="hidden lg:flex items-center gap-4">
+            {/* Search form */}
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
                 onSearchSubmit?.();
               }}
-              className="w-full flex items-center gap-2"
+              className="flex items-center gap-2"
             >
               <Input
                 type="search"
                 placeholder="Search products..."
-                className="flex-1 h-10"
+                className="w-[300px] h-10"
                 data-id="input-search-desktop"
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
@@ -127,15 +128,48 @@ export function Header({
                 <Search className="h-4 w-4" />
               </Button>
             </form>
+
+            <ThemeToggle />
+
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleAdminClick}
+                title="Admin Dashboard"
+                data-id="button-admin"
+              >
+                <ShieldCheck className="h-5 w-5 text-primary" />
+              </Button>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              onClick={onCartClick}
+              data-id="button-cart"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {cartItemCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="no-default-hover-elevate absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
+                  data-id="badge-cart-count"
+                >
+                  {cartItemCount}
+                </Badge>
+              )}
+            </Button>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
+          {/* Mobile buttons - only shown on mobile */}
+          <div className="flex lg:hidden items-center gap-1 sm:gap-2 shrink-0">
             {/* Search toggle button - mobile only */}
             <Button 
               variant="ghost" 
               size="icon"
               onClick={handleSearchToggle}
-              className="lg:hidden"
               data-id="button-search-toggle"
             >
               <Search className="h-5 w-5" />
