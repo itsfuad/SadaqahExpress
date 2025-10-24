@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const admin = localStorage.getItem("admin");
     if (!admin) {
-      window.location.href = "/admin";
+      setLocation("/admin");
     }
   }, []);
 
@@ -35,7 +35,7 @@ export default function AdminDashboard() {
       title: "Logged out",
       description: "You have been logged out successfully.",
     });
-    window.location.href = "/";
+    setLocation("/");
   };
 
   const { data: orders = [] } = useQuery<Order[]>({

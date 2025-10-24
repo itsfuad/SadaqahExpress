@@ -65,7 +65,7 @@ export default function ManageProducts() {
   useEffect(() => {
     const admin = localStorage.getItem("admin");
     if (!admin) {
-      window.location.href = "/admin";
+      setLocation("/admin");
     }
   }, []);
 

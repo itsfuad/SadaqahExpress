@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -25,12 +26,13 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   // Redirect if already logged in
   useEffect(() => {
     const admin = localStorage.getItem("admin");
     if (admin) {
-      window.location.href = "/admin/dashboard";
+      setLocation("/admin/dashboard");
     }
   }, []);
 
@@ -59,7 +61,7 @@ export default function AdminLogin() {
           title: "Login successful",
           description: "Welcome to admin dashboard",
         });
-        window.location.href = "/admin/dashboard";
+        setLocation("/admin/dashboard");
       } else {
         toast({
           title: "Login failed",

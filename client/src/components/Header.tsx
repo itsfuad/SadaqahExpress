@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ export function Header({
 }: HeaderProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
@@ -54,7 +56,7 @@ export function Header({
   }, []);
 
   const handleAdminClick = () => {
-    window.location.href = "/admin/dashboard";
+    setLocation("/admin/dashboard");
   };
 
   const handleSearchToggle = () => {
@@ -68,8 +70,8 @@ export function Header({
         <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
           <div className="flex items-center gap-2 min-w-0 flex-1 lg:flex-initial">
             {/* Logo - Full branding on desktop, icon only on mobile */}
-            <a 
-              href="/" 
+            <div
+              onClick={() => setLocation("/")}
               className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3 shrink-0"
             >
               {/* Logo icon - always visible */}
@@ -84,7 +86,7 @@ export function Header({
                 <h1 className="text-xl font-bold font-serif leading-tight">SadaqahExpress</h1>
                 <p className="text-xs text-muted-foreground">Digital Products</p>
               </div>
-            </a>
+            </div>
             
             <Select value={activeCategory} onValueChange={onCategoryChange}>
               <SelectTrigger className="flex-1 lg:w-[180px] min-w-0 ml-1 md:ml-4">

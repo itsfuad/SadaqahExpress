@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { Footer } from "@/components/Footer";
@@ -8,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Checkout() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cartOpen, setCartOpen] = useState(false);
@@ -27,7 +29,7 @@ export default function Checkout() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/";
+          setLocation("/");
         }, 2000);
       }
     } else {
@@ -38,7 +40,7 @@ export default function Checkout() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/";
+        setLocation("/");
       }, 1500);
     }
   }, []);
@@ -56,7 +58,7 @@ export default function Checkout() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/";
+        setLocation("/");
       }, 1500);
     }
   }, [cartItems, isLoading]);
@@ -99,7 +101,7 @@ export default function Checkout() {
       
       // Redirect to home after a short delay
       setTimeout(() => {
-        window.location.href = "/";
+        setLocation("/");
       }, 2000);
     },
     onError: (error: any) => {

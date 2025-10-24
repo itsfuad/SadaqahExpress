@@ -13,7 +13,7 @@ import heroImage2 from '@assets/generated_images/Office_2021_hero_banner_5189d70
 import heroImage3 from '@assets/generated_images/YouTube_Premium_hero_banner_0af84554.png';
 
 export default function Home() {
-
+  const [, setLocation] = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
@@ -174,7 +174,7 @@ export default function Home() {
     }
 
     // Cart is already saved to localStorage via useEffect
-    window.location.href = "/checkout";
+    setLocation("/checkout");
   };
 
   return (
