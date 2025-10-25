@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -85,6 +84,7 @@ export default function AccountSettings() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
 
   // Fetch user orders
@@ -384,6 +384,7 @@ export default function AccountSettings() {
       localStorage.removeItem("user");
       localStorage.removeItem("admin");
       localStorage.removeItem("cart");
+      setShowDeleteDialog(false);
       toast({
         title: "Account deleted",
         description: "Your account has been permanently deleted",
@@ -392,7 +393,8 @@ export default function AccountSettings() {
         setLocation("/");
       }, 1000);
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : "Failed to delete account");
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete account";
+      setDeleteError(errorMessage);
       setIsDeletingAccount(false);
     }
   };
@@ -813,7 +815,7 @@ export default function AccountSettings() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <AlertDialog>
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={isDeletingAccount}>
                   {isDeletingAccount ? (
@@ -864,8 +866,11 @@ export default function AccountSettings() {
                     setDeletePassword("");
                     setDeleteError("");
                   }}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteAccount}
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDeleteAccount();
+                    }}
                     disabled={isDeletingAccount}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
@@ -873,7 +878,7 @@ export default function AccountSettings() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Delete Account
-                  </AlertDialogAction>
+                  </Button>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
