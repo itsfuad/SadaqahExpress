@@ -653,7 +653,7 @@ export default function ManageProducts() {
                 Cancel
               </Button>
               <Button type="submit">
-                {editingProduct ? "Update Product" : "Create Product"}
+                {editingProduct ? "Update Product" : "Add Product"}
               </Button>
             </DialogFooter>
           </form>
