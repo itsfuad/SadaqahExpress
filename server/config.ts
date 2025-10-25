@@ -6,7 +6,7 @@ export const UNVERIFIED_EXPIRY = 10 * 60; // seconds (will be 3 * 24 * 60 * 60 i
 export const OTP_EXPIRY = 10 * 60; // seconds - 10 minutes for OTP validity
 
 // Email settings
-export const EMAIL_FROM = process.env.RESEND_FROM_EMAIL || "noreply@sadaqahexpress.com";
+export const EMAIL_FROM = process.env.RESEND_FROM_EMAIL || "admin@sadaqahexpress.com";
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@sadaqahexpress.com";
 
 // App settings

@@ -1056,7 +1056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader("Content-Type", "application/json");
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename=backup-${Date.now()}.json`,
+        `attachment; filename=database-backup-${Date.now()}.json`,
       );
       res.json(backup);
     } catch (error) {

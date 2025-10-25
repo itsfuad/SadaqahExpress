@@ -4,6 +4,7 @@ import {
   ShieldCheck,
   PackageSearch,
   User,
+  LogIn,
   LogOut,
   Settings,
   AlertCircle,
@@ -319,7 +320,7 @@ export function Header({
                 title="Login"
                 data-id="button-login"
               >
-                <User className="h-5 w-5" />
+                <LogIn className="h-5 w-5" />
               </Button>
             )}
 
@@ -445,7 +446,7 @@ export function Header({
                 title="Login"
                 data-id="button-login"
               >
-                <User className="h-5 w-5" />
+                <LogIn className="h-5 w-5" />
               </Button>
             )}
 
