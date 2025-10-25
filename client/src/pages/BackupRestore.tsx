@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useLocation } from "wouter";
+import { useState, useRef, useEffect } from "react";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   Database,
 } from "lucide-react";
-import { Link } from "wouter";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -30,11 +29,15 @@ export default function BackupRestore() {
   const { toast } = useToast();
 
   // Check if user is admin
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const admin = localStorage.getItem("admin");
+    if (!user.id || user.role !== "admin" || !admin) {
+      setLocation("/login");
+    }
+  }, [setLocation]);
+
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  if (!user.id || user.role !== "admin") {
-    setLocation("/login");
-    return null;
-  }
 
   const handleDownloadBackup = async () => {
     setIsDownloading(true);

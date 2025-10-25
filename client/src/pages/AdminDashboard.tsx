@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
+
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import {
   Users,
   Database,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+
 import { useLocation } from "wouter";
 import type { Product, Order } from "@shared/schema";
 import {
@@ -25,15 +25,15 @@ import {
 import { getOrderStatusColor } from "@/lib/orderUtils";
 
 export default function AdminDashboard() {
-  const { toast } = useToast();
+
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
     if (!admin) {
-      setLocation("/admin");
+      setLocation("/login");
     }
-  }, []);
+  }, [setLocation]);
 
   // Fetch all orders without pagination for dashboard stats
   const { data: ordersResponse } = useQuery({

@@ -43,7 +43,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import type { Order } from "@shared/schema";
+import type { Order, User as UserType } from "@shared/schema";
 import { getOrderStatusColor } from "@/lib/orderUtils";
 
 const updateNameSchema = z.object({
@@ -72,7 +72,6 @@ type ChangeEmailForm = z.infer<typeof changeEmailSchema>;
 
 export default function AccountSettings() {
   const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string>("");
   const [isLoadingName, setIsLoadingName] = useState(false);
   const [isLoadingPassword, setIsLoadingPassword] = useState(false);
@@ -86,6 +85,38 @@ export default function AccountSettings() {
   const [deleteError, setDeleteError] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
+
+  // Get userId from localStorage
+  const storedUser = localStorage.getItem("user");
+  const storedUserId = storedUser ? JSON.parse(storedUser).id : null;
+
+  // Fetch current user data from database
+  const { data: user, isLoading: isLoadingUser, refetch: refetchUser } = useQuery<UserType>({
+    queryKey: ["/api/user", storedUserId],
+    queryFn: async () => {
+      if (!storedUserId) {
+        setLocation("/login");
+        throw new Error("No user ID");
+      }
+      const response = await fetch(`/api/user?userId=${storedUserId}`);
+      if (!response.ok) {
+        if (response.status === 404 || response.status === 401) {
+          // User not found or unauthorized, clear localStorage
+          localStorage.removeItem("user");
+          localStorage.removeItem("admin");
+          setLocation("/login");
+          throw new Error("User not found");
+        }
+        throw new Error("Failed to fetch user");
+      }
+      const userData = await response.json();
+      // Update localStorage with fresh data
+      localStorage.setItem("user", JSON.stringify(userData));
+      return userData;
+    },
+    retry: false,
+    enabled: !!storedUserId,
+  });
 
   // Fetch user orders
   const { data: orders = [], isLoading: isLoadingOrders } = useQuery<Order[]>({
@@ -124,17 +155,12 @@ export default function AccountSettings() {
     resolver: zodResolver(changeEmailSchema),
   });
 
+  // Set form default value when user data is loaded
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
-      setLocation("/login");
-      return;
+    if (user) {
+      setNameValue("name", user.name);
     }
-
-    const userData = JSON.parse(storedUser);
-    setUser(userData);
-    setNameValue("name", userData.name);
-  }, [setLocation, setNameValue]);
+  }, [user, setNameValue]);
 
   const onSubmitName = async (data: UpdateNameForm) => {
     if (!user) return;
@@ -156,10 +182,8 @@ export default function AccountSettings() {
         throw new Error(result.error || "Failed to update name");
       }
 
-      // Update localStorage
-      const updatedUser = { ...user, name: data.name };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
+      // Refetch user data from database and update localStorage
+      await refetchUser();
 
       toast({
         title: "Success",
@@ -289,10 +313,8 @@ export default function AccountSettings() {
         throw new Error(result.error || "Failed to verify email");
       }
 
-      // Update localStorage
-      const updatedUser = { ...user, email: newEmail, isEmailVerified: true };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
+      // Refetch user data from database and update localStorage
+      await refetchUser();
 
       toast({
         title: "Success",
@@ -399,7 +421,7 @@ export default function AccountSettings() {
     }
   };
 
-  if (!user) {
+  if (isLoadingUser || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -806,84 +828,86 @@ export default function AccountSettings() {
           </TabsContent>
         </Tabs>
 
-        {/* Danger Zone - Delete Account */}
-        <Card className="border-destructive mt-8">
-          <CardHeader>
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
-            <CardDescription>
-              Permanently delete your account and all associated data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isDeletingAccount}>
-                  {isDeletingAccount ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Account
-                    </>
-                  )}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete
-                    your account and remove all your data from our servers.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                
-                <div className="space-y-4 py-4">
-                  {deleteError && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{deleteError}</AlertDescription>
-                    </Alert>
-                  )}
-                  <div className="space-y-2">
-                    <Label htmlFor="deletePassword">Confirm your password</Label>
-                    <PasswordInput
-                      id="deletePassword"
-                      placeholder="Enter your password"
-                      value={deletePassword}
-                      onChange={(e) => setDeletePassword(e.target.value)}
-                      disabled={isDeletingAccount}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Enter your password to confirm account deletion
-                    </p>
-                  </div>
-                </div>
-
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => {
-                    setDeletePassword("");
-                    setDeleteError("");
-                  }}>Cancel</AlertDialogCancel>
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDeleteAccount();
-                    }}
-                    disabled={isDeletingAccount}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {isDeletingAccount && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        {/* Danger Zone - Delete Account (Only for non-admin users) */}
+        {user.role !== "admin" && (
+          <Card className="border-destructive mt-8">
+            <CardHeader>
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+              <CardDescription>
+                Permanently delete your account and all associated data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isDeletingAccount}>
+                    {isDeletingAccount ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Account
+                      </>
                     )}
-                    Delete Account
                   </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete
+                      your account and remove all your data from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    {deleteError && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{deleteError}</AlertDescription>
+                      </Alert>
+                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="deletePassword">Confirm your password</Label>
+                      <PasswordInput
+                        id="deletePassword"
+                        placeholder="Enter your password"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        disabled={isDeletingAccount}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter your password to confirm account deletion
+                      </p>
+                    </div>
+                  </div>
+
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => {
+                      setDeletePassword("");
+                      setDeleteError("");
+                    }}>Cancel</AlertDialogCancel>
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDeleteAccount();
+                      }}
+                      disabled={isDeletingAccount}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeletingAccount && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Delete Account
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

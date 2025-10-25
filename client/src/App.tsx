@@ -13,7 +13,6 @@ import NewAdmin from "@/pages/NewAdmin";
 import ForgotPassword from "@/pages/ForgotPassword";
 import AccountSettings from "@/pages/AccountSettings";
 import VerifyOTPPage from "@/pages/VerifyOTPPage";
-import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import ManageProducts from "@/pages/ManageProducts";
 import ManageOrders from "@/pages/ManageOrders";
@@ -33,7 +32,6 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/account-settings" component={AccountSettings} />
       <Route path="/verify-otp" component={VerifyOTPPage} />
-      <Route path="/admin-login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/products" component={ManageProducts} />
       <Route path="/admin/orders" component={ManageOrders} />

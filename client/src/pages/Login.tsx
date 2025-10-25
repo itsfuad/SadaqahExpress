@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+﻿import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +26,24 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        if (userData.role === "admin") {
+          setLocation("/admin/dashboard");
+        } else {
+          setLocation("/");
+        }
+      } catch (e) {
+        // Invalid user data, clear it
+        localStorage.removeItem("user");
+      }
+    }
+  }, [setLocation]);
 
   const {
     register,

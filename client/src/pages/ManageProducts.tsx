@@ -108,9 +108,9 @@ export default function ManageProducts() {
   useEffect(() => {
     const admin = localStorage.getItem("admin");
     if (!admin) {
-      setLocation("/admin");
+      setLocation("/login");
     }
-  }, []);
+  }, [setLocation]);
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", search, searchBy, sortBy, sortOrder],

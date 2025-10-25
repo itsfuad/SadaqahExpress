@@ -49,9 +49,9 @@ export default function ManageOrders() {
   useEffect(() => {
     const admin = localStorage.getItem("admin");
     if (!admin) {
-      setLocation("/admin");
+      setLocation("/login");
     }
-  }, []);
+  }, [setLocation]);
 
   const { data, isLoading } = useQuery<OrdersResponse>({
     queryKey: ["/api/orders", page, search, searchBy, sortBy, sortOrder],
