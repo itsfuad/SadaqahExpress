@@ -5,7 +5,11 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, InsertProduct } from "@shared/schema";
+import type { Product } from "@shared/schema";
+import { insertProductSchema } from "@shared/schema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Table,
   TableBody,
@@ -46,6 +50,27 @@ import { Plus, Pencil, Trash2, ArrowLeft, Search, ArrowUpDown } from "lucide-rea
 import { useLocation } from "wouter";
 import { PRODUCT_CATEGORIES } from "@/lib/categories";
 
+// Form schema for client-side validation
+const productFormSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().optional(),
+  image: z.string().url("Must be a valid URL"),
+  price: z.number({ invalid_type_error: "Price must be a number" }).min(0.01, "Price must be greater than 0"),
+  originalPrice: z.number({ invalid_type_error: "Original price must be a number" }).min(0).optional().or(z.literal(0).transform(() => undefined)),
+  category: z.string().min(1, "Category is required"),
+  stock: z.number({ invalid_type_error: "Stock must be a number" }).min(0, "Stock cannot be negative"),
+}).refine((data) => {
+  if (data.originalPrice && data.originalPrice > 0) {
+    return data.price < data.originalPrice;
+  }
+  return true;
+}, {
+  message: "Discount price must be less than original price",
+  path: ["price"],
+});
+
+type ProductFormData = z.infer<typeof productFormSchema>;
+
 export default function ManageProducts() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -57,15 +82,28 @@ export default function ManageProducts() {
   const [searchBy, setSearchBy] = useState("name");
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [formData, setFormData] = useState<Partial<InsertProduct>>({
-    name: "",
-    description: "",
-    image: "",
-    price: 0,
-    originalPrice: 0,
-    category: PRODUCT_CATEGORIES[0]?.id || "microsoft",
-    stock: 0,
+
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+    watch,
+  } = useForm<ProductFormData>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      image: "",
+      price: 0,
+      originalPrice: 0,
+      category: PRODUCT_CATEGORIES[0]?.id || "microsoft",
+      stock: 0,
+    },
   });
+
+  const imageUrl = watch("image");
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
@@ -92,7 +130,7 @@ export default function ManageProducts() {
             case "category":
               return product.category.toLowerCase().includes(searchLower);
             case "description":
-              return product.description.toLowerCase().includes(searchLower);
+              return product.description?.toLowerCase().includes(searchLower);
             default:
               return true;
           }
@@ -120,13 +158,27 @@ export default function ManageProducts() {
   });
 
   const createProductMutation = useMutation({
-    mutationFn: async (product: InsertProduct) => {
+    mutationFn: async (product: ProductFormData) => {
+      // Transform data for API - add required fields
+      const productData = {
+        ...product,
+        rating: 0,
+        reviewCount: 0,
+        badge: undefined,
+        description: product.description || "",
+        originalPrice: product.originalPrice && product.originalPrice > 0 ? product.originalPrice : undefined,
+      };
+      
       const response = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(product),
+        body: JSON.stringify(productData),
       });
-      if (!response.ok) throw new Error("Failed to create product");
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create product");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -136,25 +188,36 @@ export default function ManageProducts() {
         description: "Product has been created successfully.",
       });
       setIsDialogOpen(false);
-      resetForm();
+      reset();
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to create product. Please try again.",
+        description: error.message || "Failed to create product. Please try again.",
         variant: "destructive",
       });
     },
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ id, product }: { id: number; product: Partial<InsertProduct> }) => {
+    mutationFn: async ({ id, product }: { id: number; product: ProductFormData }) => {
+      // Transform data for API
+      const productData = {
+        ...product,
+        description: product.description || "",
+        originalPrice: product.originalPrice && product.originalPrice > 0 ? product.originalPrice : undefined,
+      };
+      
       const response = await fetch(`/api/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(product),
+        body: JSON.stringify(productData),
       });
-      if (!response.ok) throw new Error("Failed to update product");
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update product");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -164,12 +227,12 @@ export default function ManageProducts() {
         description: "Product has been updated successfully.",
       });
       setIsDialogOpen(false);
-      resetForm();
+      reset();
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to update product. Please try again.",
+        description: error.message || "Failed to update product. Please try again.",
         variant: "destructive",
       });
     },
@@ -200,55 +263,41 @@ export default function ManageProducts() {
     },
   });
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      image: "",
-      price: 0,
-      originalPrice: 0,
-      category: PRODUCT_CATEGORIES[0]?.id || "microsoft",
-      stock: 0,
-    });
-    setEditingProduct(null);
-  };
-
   const handleOpenDialog = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
-      setFormData({
+      reset({
         name: product.name,
-        description: product.description,
+        description: product.description || "",
         image: product.image,
         price: product.price,
-        originalPrice: product.originalPrice,
+        originalPrice: product.originalPrice || 0,
         category: product.category,
         stock: product.stock,
       });
     } else {
-      resetForm();
+      setEditingProduct(null);
+      reset({
+        name: "",
+        description: "",
+        image: "",
+        price: 0,
+        originalPrice: 0,
+        category: PRODUCT_CATEGORIES[0]?.id || "microsoft",
+        stock: 0,
+      });
     }
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Add default values for rating and reviewCount, ensure badge is undefined or empty
-    const productData = {
-      ...formData,
-      rating: 0,
-      reviewCount: 0,
-      badge: undefined,
-    };
-    
+  const onSubmit = (data: ProductFormData) => {
     if (editingProduct) {
       updateProductMutation.mutate({
         id: editingProduct.id,
-        product: productData as InsertProduct,
+        product: data,
       });
     } else {
-      createProductMutation.mutate(productData as InsertProduct);
+      createProductMutation.mutate(data);
     }
   };
 
@@ -261,19 +310,6 @@ export default function ManageProducts() {
     if (deletingProductId) {
       deleteProductMutation.mutate(deletingProductId);
     }
-  };
-
-  const isFormValid = () => {
-    return (
-      formData.name?.trim() !== "" &&
-      formData.description?.trim() !== "" &&
-      formData.image?.trim() !== "" &&
-      formData.category?.trim() !== "" &&
-      formData.price !== undefined &&
-      formData.price > 0 &&
-      formData.stock !== undefined &&
-      formData.stock >= 0
-    );
   };
 
   const handleSort = (column: string) => {
@@ -477,27 +513,33 @@ export default function ManageProducts() {
                 : "Fill in the details to create a new product."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleFormSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Product Name *</Label>
                 <Input
                   id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
+                  {...register("name")}
                 />
+                {errors.name && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.name.message}
+                  </p>
+                )}
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  required
+                  {...register("description")}
                   rows={3}
                 />
+                {errors.description && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.description.message}
+                  </p>
+                )}
               </div>
               
               <div className="grid gap-2">
@@ -505,14 +547,17 @@ export default function ManageProducts() {
                 <Input
                   id="image"
                   type="url"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  required
+                  {...register("image")}
                 />
-                {formData.image && (
+                {errors.image && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.image.message}
+                  </p>
+                )}
+                {imageUrl && !errors.image && (
                   <div className="mt-2 border rounded-md overflow-hidden bg-muted">
                     <img
-                      src={formData.image}
+                      src={imageUrl}
                       alt="Preview"
                       className="w-full h-48 object-cover"
                       onError={(e) => {
@@ -526,9 +571,8 @@ export default function ManageProducts() {
               <div className="grid gap-2">
                 <Label htmlFor="category">Category *</Label>
                 <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  required
+                  value={watch("category")}
+                  onValueChange={(value) => setValue("category", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a category" />
@@ -541,6 +585,11 @@ export default function ManageProducts() {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.category && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.category.message}
+                  </p>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -551,10 +600,13 @@ export default function ManageProducts() {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                    required
+                    {...register("price", { valueAsNumber: true })}
                   />
+                  {errors.price && (
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {errors.price.message}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="grid gap-2">
@@ -564,9 +616,13 @@ export default function ManageProducts() {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.originalPrice || ""}
-                    onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) })}
+                    {...register("originalPrice", { valueAsNumber: true })}
                   />
+                  {errors.originalPrice && (
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {errors.originalPrice.message}
+                    </p>
+                  )}
                 </div>
               </div>
               
@@ -576,10 +632,13 @@ export default function ManageProducts() {
                   id="stock"
                   type="number"
                   min="0"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-                  required
+                  {...register("stock", { valueAsNumber: true })}
                 />
+                {errors.stock && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.stock.message}
+                  </p>
+                )}
               </div>
             </div>
             <DialogFooter>
@@ -588,12 +647,12 @@ export default function ManageProducts() {
                 variant="outline"
                 onClick={() => {
                   setIsDialogOpen(false);
-                  resetForm();
+                  reset();
                 }}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={!isFormValid()}>
+              <Button type="submit">
                 {editingProduct ? "Update Product" : "Create Product"}
               </Button>
             </DialogFooter>

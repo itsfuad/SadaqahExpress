@@ -7,10 +7,17 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Home from "@/pages/Home";
 import Checkout from "@/pages/Checkout";
 import OrderTracking from "@/pages/OrderTracking";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import NewAdmin from "@/pages/NewAdmin";
+import ForgotPassword from "@/pages/ForgotPassword";
+import AccountSettings from "@/pages/AccountSettings";
+import VerifyOTPPage from "@/pages/VerifyOTPPage";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import ManageProducts from "@/pages/ManageProducts";
 import ManageOrders from "@/pages/ManageOrders";
+import BackupRestore from "@/pages/BackupRestore";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,10 +27,17 @@ function Router() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/track-order" component={OrderTracking} />
       <Route path="/track-order/:id" component={OrderTracking} />
-      <Route path="/admin" component={AdminLogin} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
+      <Route path="/new-admin" component={NewAdmin} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/account-settings" component={AccountSettings} />
+      <Route path="/verify-otp" component={VerifyOTPPage} />
+      <Route path="/admin-login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/products" component={ManageProducts} />
       <Route path="/admin/orders" component={ManageOrders} />
+      <Route path="/admin/backup" component={BackupRestore} />
       <Route component={NotFound} />
     </Switch>
   );

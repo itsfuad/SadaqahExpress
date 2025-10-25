@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRoute, useLocation } from "wouter";
+import { useRoute, useLocation, Link } from "wouter";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Search, Package, Clock, CheckCircle, XCircle, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Order } from "@shared/schema";
+import { getOrderStatusColor } from "@/lib/orderUtils";
 
 export default function OrderTracking() {
   const [, params] = useRoute("/track-order/:id");
@@ -17,6 +18,10 @@ export default function OrderTracking() {
   const [orderId, setOrderId] = useState("");
   const [searchOrderId, setSearchOrderId] = useState("");
   const { toast } = useToast();
+
+  // Check if user is logged in
+  const storedUser = localStorage.getItem("user");
+  const isLoggedIn = !!storedUser;
 
   // Initialize from URL parameter
   useEffect(() => {
@@ -68,19 +73,6 @@ export default function OrderTracking() {
         return <Package className="h-5 w-5 text-yellow-500" />;
       default:
         return <XCircle className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "processing":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "received":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
   };
 
@@ -140,7 +132,7 @@ export default function OrderTracking() {
                       <span>Order Details</span>
                       <div className="flex items-center gap-2">
                         {getStatusIcon(order.status)}
-                        <Badge className={getStatusColor(order.status)}>
+                        <Badge className={getOrderStatusColor(order.status)}>
                           {order.status.toUpperCase()}
                         </Badge>
                       </div>
@@ -258,6 +250,38 @@ export default function OrderTracking() {
                           </div>
                         </div>
                       </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Suggest account creation for guest users */}
+                {!isLoggedIn && (
+                  <Card className="border-primary">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <UserPlus className="h-5 w-5" />
+                        Create an Account
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-muted-foreground">
+                        Create an account to easily track all your orders in one place and enjoy a faster checkout experience next time!
+                      </p>
+                      <div className="flex gap-3">
+                        <Link href="/signup" className="flex-1">
+                          <Button className="w-full">
+                            Create Account
+                          </Button>
+                        </Link>
+                        <Link href="/login" className="flex-1">
+                          <Button variant="outline" className="w-full">
+                            Sign In
+                          </Button>
+                        </Link>
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Already ordered with this email? Your previous orders will be automatically linked to your new account!
+                      </p>
                     </CardContent>
                   </Card>
                 )}

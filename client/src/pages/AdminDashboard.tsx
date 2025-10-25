@@ -4,7 +4,13 @@ import { queryClient } from "@/lib/queryClient";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, ShoppingBag, DollarSign, Users, LogOut } from "lucide-react";
+import {
+  Package,
+  ShoppingBag,
+  DollarSign,
+  Users,
+  Database,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import type { Product, Order } from "@shared/schema";
@@ -16,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getOrderStatusColor } from "@/lib/orderUtils";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -27,15 +34,6 @@ export default function AdminDashboard() {
       setLocation("/admin");
     }
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("admin");
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully.",
-    });
-    setLocation("/");
-  };
 
   // Fetch all orders without pagination for dashboard stats
   const { data: ordersResponse } = useQuery({
@@ -57,7 +55,8 @@ export default function AdminDashboard() {
     .filter((o: Order) => o.status === "completed")
     .reduce((sum: number, o: Order) => sum + o.total, 0);
 
-  const uniqueCustomers = new Set(orders.map((o: Order) => o.customerEmail)).size;
+  const uniqueCustomers = new Set(orders.map((o: Order) => o.customerEmail))
+    .size;
 
   const stats = [
     {
@@ -88,25 +87,18 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header 
-        onSearchClick={() => {}}
-      />
-      
+      <Header onSearchClick={() => {}} />
+
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold font-serif mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage your digital products store</p>
+            <h1 className="text-3xl font-bold font-serif mb-2">
+              Admin Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your digital products store
+            </p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="gap-2"
-            data-id="button-logout"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -131,17 +123,44 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Button onClick={() => setLocation("/admin/products")} variant="outline" className="h-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Button
+            onClick={() => setLocation("/admin/products")}
+            variant="outline"
+            className="h-20"
+          >
             <div className="text-left">
               <div className="font-semibold">Manage Products</div>
-              <div className="text-sm text-muted-foreground">Add, edit, or remove products</div>
+              <div className="text-sm text-muted-foreground">
+                Add, edit, or remove products
+              </div>
             </div>
           </Button>
-          <Button onClick={() => setLocation("/admin/orders")} variant="outline" className="h-20">
+          <Button
+            onClick={() => setLocation("/admin/orders")}
+            variant="outline"
+            className="h-20"
+          >
             <div className="text-left">
               <div className="font-semibold">Manage Orders</div>
-              <div className="text-sm text-muted-foreground">View and update order status</div>
+              <div className="text-sm text-muted-foreground">
+                View and update order status
+              </div>
+            </div>
+          </Button>
+          <Button
+            onClick={() => setLocation("/admin/backup")}
+            variant="outline"
+            className="h-20"
+          >
+            <div className="text-left flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              <div>
+                <div className="font-semibold">Backup & Restore</div>
+                <div className="text-sm text-muted-foreground">
+                  Download and restore data
+                </div>
+              </div>
             </div>
           </Button>
         </div>
@@ -150,7 +169,11 @@ export default function AdminDashboard() {
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
               <CardTitle>Recent Orders</CardTitle>
-              <Button onClick={() => setLocation("/admin/orders")} variant="outline" size="sm">
+              <Button
+                onClick={() => setLocation("/admin/orders")}
+                variant="outline"
+                size="sm"
+              >
                 View All
               </Button>
             </div>
@@ -170,45 +193,38 @@ export default function AdminDashboard() {
               <TableBody>
                 {orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell
+                      colSpan={6}
+                      className="text-center text-muted-foreground py-8"
+                    >
                       No orders yet
                     </TableCell>
                   </TableRow>
                 ) : (
                   orders.slice(0, 5).map((order: Order) => {
-                    const getStatusColor = (status: string) => {
-                      switch (status) {
-                        case "completed":
-                          return "text-green-600 dark:text-green-400";
-                        case "processing":
-                          return "text-blue-600 dark:text-blue-400";
-                        case "received":
-                          return "text-yellow-600 dark:text-yellow-400";
-                        case "cancelled":
-                          return "text-red-600 dark:text-red-400";
-                        default:
-                          return "text-muted-foreground";
-                      }
-                    };
-
                     return (
                       <TableRow key={order.id}>
-                        <TableCell className="font-mono text-sm" data-id={`text-order-${order.id}`}>
+                        <TableCell
+                          className="font-mono text-sm"
+                          data-id={`text-order-${order.id}`}
+                        >
                           {order.id}
                         </TableCell>
                         <TableCell>{order.customerName}</TableCell>
                         <TableCell className="text-sm">
-                          {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                          {order.items.length} item
+                          {order.items.length > 1 ? "s" : ""}
                         </TableCell>
                         <TableCell className="font-semibold">
                           ৳{order.total.toFixed(2)}
                         </TableCell>
                         <TableCell>
                           <span
-                            className={getStatusColor(order.status)}
+                            className={getOrderStatusColor(order.status) + " p-1 rounded-md"}
                             data-id={`badge-status-${order.id}`}
                           >
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            {order.status.charAt(0).toUpperCase() +
+                              order.status.slice(1)}
                           </span>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">

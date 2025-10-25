@@ -1,11 +1,23 @@
-import { Search, ShoppingCart, ShieldCheck, PackageSearch } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  ShieldCheck,
+  PackageSearch,
+  User,
+  LogOut,
+  Settings,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart as ShoppingCartPanel, type CartItem } from "@/components/ShoppingCart";
+import {
+  ShoppingCart as ShoppingCartPanel,
+  type CartItem,
+} from "@/components/ShoppingCart";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES } from "@/lib/categories";
 import {
@@ -15,6 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   showSearch?: boolean;
@@ -27,7 +47,7 @@ interface HeaderProps {
   onCategoryChange?: (category: string) => void;
 }
 
-export function Header({ 
+export function Header({
   showSearch = false,
   showCategory = false,
   onSearchClick,
@@ -35,12 +55,13 @@ export function Header({
   onSearchChange,
   onSearchSubmit,
   activeCategory = "all",
-  onCategoryChange
+  onCategoryChange,
 }: HeaderProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [user, setUser] = useState<any>(null);
 
   // Cart state - managed inside Header
   const [cartOpen, setCartOpen] = useState(false);
@@ -64,19 +85,28 @@ export function Header({
     // Listen for cart updates
     const handleCartUpdate = () => loadCart();
     window.addEventListener("cartUpdated", handleCartUpdate);
-    
+
     return () => window.removeEventListener("cartUpdated", handleCartUpdate);
   }, []);
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
     setIsAdmin(!!admin);
+
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Failed to parse user data:", error);
+      }
+    }
   }, []);
 
   // Cart handlers
   const handleUpdateQuantity = (id: number, quantity: number) => {
-    const updatedCart = cartItems.map(item =>
-      item.id === id ? { ...item, quantity } : item
+    const updatedCart = cartItems.map((item) =>
+      item.id === id ? { ...item, quantity } : item,
     );
     setCartItems(updatedCart);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
@@ -84,7 +114,7 @@ export function Header({
   };
 
   const handleRemoveItem = (id: number) => {
-    const updatedCart = cartItems.filter(item => item.id !== id);
+    const updatedCart = cartItems.filter((item) => item.id !== id);
     setCartItems(updatedCart);
     if (updatedCart.length > 0) {
       localStorage.setItem("cart", JSON.stringify(updatedCart));
@@ -111,6 +141,18 @@ export function Header({
     setSearchExpanded(!searchExpanded);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("admin");
+    setUser(null);
+    setIsAdmin(false);
+    setLocation("/");
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+  };
+
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -125,19 +167,23 @@ export function Header({
               className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3 shrink-0"
             >
               {/* Logo icon - always visible */}
-              <img 
-                src="/favicon.png" 
-                alt="SadaqahExpress Logo" 
+              <img
+                src="/favicon.png"
+                alt="SadaqahExpress Logo"
                 className="w-10 h-10 md:w-12 md:h-12 shrink-0"
               />
-              
+
               {/* Text branding - hidden on mobile, visible on desktop */}
               <div className="hidden lg:block">
-                <h1 className="text-xl font-bold font-serif leading-tight">SadaqahExpress</h1>
-                <p className="text-xs text-muted-foreground">Digital Products</p>
+                <h1 className="text-xl font-bold font-serif leading-tight">
+                  SadaqahExpress
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  Digital Products
+                </p>
               </div>
             </Link>
-            
+
             {showCategory && (
               <Select value={activeCategory} onValueChange={onCategoryChange}>
                 <SelectTrigger className="flex-1 lg:w-[180px] min-w-0 ml-1 md:ml-4">
@@ -158,7 +204,7 @@ export function Header({
           <div className="hidden lg:flex items-center gap-4">
             {/* Search form */}
             {showSearch && (
-              <form 
+              <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   onSearchSubmit?.();
@@ -173,9 +219,9 @@ export function Header({
                   value={searchValue}
                   onChange={(e) => onSearchChange?.(e.target.value)}
                 />
-                <Button 
+                <Button
                   type="submit"
-                  variant="ghost" 
+                  variant="ghost"
                   size="icon"
                   className="h-10 w-10 shrink-0"
                   data-id="button-search-desktop"
@@ -198,15 +244,82 @@ export function Header({
               <PackageSearch className="h-5 w-5" />
             </Button>
 
-            {isAdmin && (
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    title="Account"
+                    className={user.isEmailVerified === false ? "relative" : ""}
+                    style={
+                      user.isEmailVerified === false
+                        ? { borderColor: "#ef4444", color: "#ef4444" }
+                        : {}
+                    }
+                  >
+                    <User className="h-5 w-5" />
+                    {user.isEmailVerified === false && (
+                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.email}
+                      </p>
+                      {user.role === "admin" && (
+                        <p className="text-xs text-primary font-medium">
+                          Administrator
+                        </p>
+                      )}
+                      {user.isEmailVerified === false && (
+                        <p className="text-xs text-orange-600 flex items-center gap-1 mt-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Verify your email
+                        </p>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {user.role === "admin" && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => setLocation("/admin/dashboard")}
+                        className="cursor-pointer"
+                      >
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Admin Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => setLocation("/account-settings")}
+                    className="cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Account Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
               <Button
                 variant="outline"
                 size="icon"
-                onClick={handleAdminClick}
-                title="Admin Dashboard"
-                data-id="button-admin"
+                onClick={() => setLocation("/login")}
+                title="Login"
+                data-id="button-login"
               >
-                <ShieldCheck className="h-5 w-5 text-primary" />
+                <User className="h-5 w-5" />
               </Button>
             )}
 
@@ -219,8 +332,8 @@ export function Header({
             >
               <ShoppingCart className="h-5 w-5" />
               {cartItemCount > 0 && (
-                <Badge 
-                  variant="destructive" 
+                <Badge
+                  variant="destructive"
                   className="no-default-hover-elevate absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
                   data-id="badge-cart-count"
                 >
@@ -234,8 +347,8 @@ export function Header({
           <div className="flex lg:hidden items-center gap-1 sm:gap-2 shrink-0">
             {/* Search toggle button - mobile only */}
             {showSearch && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={handleSearchToggle}
                 data-id="button-search-toggle"
@@ -257,15 +370,82 @@ export function Header({
               <PackageSearch className="h-5 w-5" />
             </Button>
 
-            {isAdmin && (
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    title="Account"
+                    className={user.isEmailVerified === false ? "relative" : ""}
+                    style={
+                      user.isEmailVerified === false
+                        ? { borderColor: "#ef4444", color: "#ef4444" }
+                        : {}
+                    }
+                  >
+                    <User className="h-5 w-5" />
+                    {user.isEmailVerified === false && (
+                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.email}
+                      </p>
+                      {user.role === "admin" && (
+                        <p className="text-xs text-primary font-medium">
+                          Administrator
+                        </p>
+                      )}
+                      {user.isEmailVerified === false && (
+                        <p className="text-xs text-orange-600 flex items-center gap-1 mt-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Verify your email
+                        </p>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {user.role === "admin" && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => setLocation("/admin/dashboard")}
+                        className="cursor-pointer"
+                      >
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Admin Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => setLocation("/account-settings")}
+                    className="cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Account Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
               <Button
                 variant="outline"
                 size="icon"
-                onClick={handleAdminClick}
-                title="Admin Dashboard"
-                data-id="button-admin"
+                onClick={() => setLocation("/login")}
+                title="Login"
+                data-id="button-login"
               >
-                <ShieldCheck className="h-5 w-5 text-primary" />
+                <User className="h-5 w-5" />
               </Button>
             )}
 
@@ -278,8 +458,8 @@ export function Header({
             >
               <ShoppingCart className="h-5 w-5" />
               {cartItemCount > 0 && (
-                <Badge 
-                  variant="destructive" 
+                <Badge
+                  variant="destructive"
                   className="no-default-hover-elevate absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
                   data-id="badge-cart-count"
                 >
@@ -293,7 +473,7 @@ export function Header({
         {/* Mobile expandable search bar - appears below when toggled, hidden on desktop */}
         {showSearch && searchExpanded && (
           <div className="lg:hidden pb-3 animate-in slide-in-from-top-2 duration-200">
-            <form 
+            <form
               onSubmit={(e) => {
                 e.preventDefault();
                 onSearchSubmit?.();
@@ -309,9 +489,9 @@ export function Header({
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 autoFocus
               />
-              <Button 
+              <Button
                 type="submit"
-                variant="ghost" 
+                variant="ghost"
                 size="icon"
                 className="h-10 w-10 shrink-0"
                 data-id="button-search-mobile"

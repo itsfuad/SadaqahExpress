@@ -25,6 +25,7 @@ import { Search, ArrowUpDown, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import type { Order } from "@shared/schema";
+import { getOrderStatusColor } from "@/lib/orderUtils";
 
 interface OrdersResponse {
   orders: Order[];
@@ -109,21 +110,6 @@ export default function ManageOrders() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "processing":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "received":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-    }
   };
 
   const orders = data?.orders || [];
@@ -281,7 +267,7 @@ export default function ManageOrders() {
                                 }
                                 disabled={updateStatusMutation.isPending}
                               >
-                                <SelectTrigger className={`w-[130px] ml-auto ${getStatusColor(order.status)}`}>
+                                <SelectTrigger className={`w-[130px] ml-auto ${getOrderStatusColor(order.status)}`}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-background">

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import type { User } from "@shared/schema";
 
 interface CartItem {
   id: number;
@@ -20,6 +21,29 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch current user if logged in
+  const storedUser = localStorage.getItem("user");
+  const storedUserId = storedUser ? JSON.parse(storedUser).id : null;
+  
+  const { data: user } = useQuery<User>({
+    queryKey: ["/api/user", storedUserId],
+    queryFn: async () => {
+      if (!storedUserId) return null;
+      const response = await fetch(`/api/user?userId=${storedUserId}`);
+      if (!response.ok) {
+        if (response.status === 404 || response.status === 401) {
+          // User not found or unauthorized, clear localStorage
+          localStorage.removeItem("user");
+          return null;
+        }
+        throw new Error("Failed to fetch user");
+      }
+      return response.json();
+    },
+    retry: false,
+    enabled: !!storedUserId,
+  });
 
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
@@ -159,6 +183,7 @@ export default function Checkout() {
         
         <CheckoutForm 
           total={total}
+          user={user}
           onSubmit={handleOrderSubmit}
         />
       </main>

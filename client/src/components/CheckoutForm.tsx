@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { User } from "@shared/schema";
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -25,10 +27,13 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 interface CheckoutFormProps {
   total: number;
+  user?: User | null; // Pass user if logged in
   onSubmit?: (data: CheckoutFormData) => void;
 }
 
-export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
+export function CheckoutForm({ total, user, onSubmit }: CheckoutFormProps) {
+  const isLoggedIn = !!user;
+
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -38,6 +43,14 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
       notes: "",
     },
   });
+
+  // Update form values when user data is loaded
+  useEffect(() => {
+    if (user) {
+      form.setValue("fullName", user.name);
+      form.setValue("email", user.email);
+    }
+  }, [user, form]);
 
   const handleSubmit = (data: CheckoutFormData) => {
     console.log("Order submitted:", data);
@@ -65,6 +78,7 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
                           <Input 
                             placeholder="John Doe" 
                             {...field}
+                            disabled={isLoggedIn}
                             data-id="input-fullname"
                           />
                         </FormControl>
@@ -84,6 +98,7 @@ export function CheckoutForm({ total, onSubmit }: CheckoutFormProps) {
                             type="email"
                             placeholder="john@example.com"
                             {...field}
+                            disabled={isLoggedIn}
                             data-id="input-email"
                           />
                         </FormControl>
