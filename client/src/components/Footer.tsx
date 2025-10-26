@@ -4,6 +4,8 @@ export function Footer() {
 
   const quickLinks = [
     { id: "/track-order", label: "Track Your Order" },
+    { id: "/about", label: "About Us" },
+    { id: "/terms", label: "Terms of Service" },
   ]
 
   return (
@@ -27,8 +29,8 @@ export function Footer() {
             <div>
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2">
-                {quickLinks.map((link, index) => (
-                  <li key={index}>
+                {quickLinks.map((link) => (
+                  <li key={link.id}>
                     <Link
                       href={link.id}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -46,9 +48,6 @@ export function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} Sadaqah Express. All rights reserved.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Whatsapp & Telegram: 017 856 856 54
             </p>
             <p className="text-sm text-muted-foreground">
               Developed by{" "}

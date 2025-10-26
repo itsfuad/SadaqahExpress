@@ -18,6 +18,8 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import ManageProducts from "@/pages/ManageProducts";
 import ManageOrders from "@/pages/ManageOrders";
 import BackupRestore from "@/pages/BackupRestore";
+import AboutUs from "@/pages/AboutUs";
+import TermsOfService from "@/pages/TermsOfService";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -38,6 +40,8 @@ function Router() {
       <Route path="/admin/products" component={ManageProducts} />
       <Route path="/admin/orders" component={ManageOrders} />
       <Route path="/admin/backup" component={BackupRestore} />
+      <Route path="/about" component={AboutUs} />
+      <Route path="/terms" component={TermsOfService} />
       <Route component={NotFound} />
     </Switch>
   );
