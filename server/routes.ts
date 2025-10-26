@@ -15,7 +15,7 @@ import {
 import { ZodError } from "zod";
 import { randomInt } from "crypto";
 import { hashPassword, verifyPassword } from "./password";
-import { UNVERIFIED_EXPIRY } from "./config";
+import { UNVERIFIED_EXPIRY, OTP_EXPIRY } from "./config";
 
 // Background job to clean up unverified accounts
 setInterval(async () => {
@@ -39,7 +39,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader("Expires", "0");
 
       const category = req.query.category as string | undefined;
+      const page = req.query.page ? parseInt(req.query.page as string) : undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const sortBy = req.query.sortBy as 'default' | 'price-low' | 'price-high' | undefined;
+      const search = req.query.search as string | undefined;
 
+      // If pagination parameters are provided, use paginated endpoint
+      if (page !== undefined && limit !== undefined) {
+        const result = await storage.getProductsPaginated({
+          page,
+          limit,
+          category,
+          sortBy: sortBy || 'default',
+          search
+        });
+        return res.json(result);
+      }
+
+      // Legacy support: return all products if no pagination params
       if (category && category !== "all") {
         const products = await storage.getProductsByCategory(category);
         return res.json(products);
@@ -430,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate and send OTP
       const otpCode = randomInt(100000, 999999).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+      const expiresAt = new Date(Date.now() + OTP_EXPIRY * 1000).toISOString();
 
       await storage.createOTP({
         email: user.email,
@@ -533,7 +550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate new OTP
       const otpCode = randomInt(100000, 999999).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + OTP_EXPIRY * 1000).toISOString();
 
       await storage.createOTP({
         email,
@@ -609,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate OTP
       const otpCode = randomInt(100000, 999999).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + OTP_EXPIRY * 1000).toISOString();
 
       await storage.createOTP({
         email,
@@ -736,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate and send OTP
       const otpCode = randomInt(100000, 999999).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + OTP_EXPIRY * 1000).toISOString();
 
       await storage.createOTP({
         email: admin.email,
@@ -899,7 +916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate OTP for new email
       const otpCode = randomInt(100000, 999999).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + OTP_EXPIRY * 1000).toISOString();
 
       await storage.createOTP({
         email: newEmail,

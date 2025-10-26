@@ -16,6 +16,13 @@ export interface IStorage {
   getAllProducts(): Promise<Product[]>;
   getProductById(id: number): Promise<Product | undefined>;
   getProductsByCategory(category: string): Promise<Product[]>;
+  getProductsPaginated(params: {
+    page: number;
+    limit: number;
+    category?: string;
+    sortBy?: 'default' | 'price-low' | 'price-high';
+    search?: string;
+  }): Promise<{ products: Product[]; total: number; hasMore: boolean }>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(
     id: number,
@@ -176,6 +183,50 @@ export class MemStorage implements IStorage {
     return Array.from(this.products.values()).filter(
       (p) => p.category === category,
     );
+  }
+
+  async getProductsPaginated(params: {
+    page: number;
+    limit: number;
+    category?: string;
+    sortBy?: 'default' | 'price-low' | 'price-high';
+    search?: string;
+  }): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
+    const { page, limit, category, sortBy = 'default', search } = params;
+    
+    // Get all products (or by category)
+    let products = category && category !== 'all' 
+      ? await this.getProductsByCategory(category)
+      : await this.getAllProducts();
+
+    // Apply search filter if provided
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      products = products.filter(p => 
+        p.name.toLowerCase().includes(searchLower) ||
+        (p.category && p.category.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply sorting
+    if (sortBy === 'price-low') {
+      products.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-high') {
+      products.sort((a, b) => b.price - a.price);
+    }
+    // 'default' maintains the order from database
+
+    const total = products.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+    const hasMore = endIndex < total;
+
+    return {
+      products: paginatedProducts,
+      total,
+      hasMore
+    };
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
@@ -548,6 +599,50 @@ export class RedisStorage implements IStorage {
   async getProductsByCategory(category: string): Promise<Product[]> {
     const allProducts = await this.getAllProducts();
     return allProducts.filter((p) => p.category === category);
+  }
+
+  async getProductsPaginated(params: {
+    page: number;
+    limit: number;
+    category?: string;
+    sortBy?: 'default' | 'price-low' | 'price-high';
+    search?: string;
+  }): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
+    const { page, limit, category, sortBy = 'default', search } = params;
+    
+    // Get all products (or by category)
+    let products = category && category !== 'all' 
+      ? await this.getProductsByCategory(category)
+      : await this.getAllProducts();
+
+    // Apply search filter if provided
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      products = products.filter(p => 
+        p.name.toLowerCase().includes(searchLower) ||
+        (p.category && p.category.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply sorting
+    if (sortBy === 'price-low') {
+      products.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-high') {
+      products.sort((a, b) => b.price - a.price);
+    }
+    // 'default' maintains the order from database
+
+    const total = products.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+    const hasMore = endIndex < total;
+
+    return {
+      products: paginatedProducts,
+      total,
+      hasMore
+    };
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
@@ -1066,6 +1161,15 @@ class StorageProxy implements IStorage {
   }
   async getProductsByCategory(category: string): Promise<Product[]> {
     return this.active.getProductsByCategory(category);
+  }
+  async getProductsPaginated(params: {
+    page: number;
+    limit: number;
+    category?: string;
+    sortBy?: 'default' | 'price-low' | 'price-high';
+    search?: string;
+  }): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
+    return this.active.getProductsPaginated(params);
   }
   async createProduct(product: InsertProduct): Promise<Product> {
     return this.active.createProduct(product);

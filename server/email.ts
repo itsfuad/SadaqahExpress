@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import type { Order } from "@shared/schema";
+import { OTP_EXPIRY } from "./config";
 
 // Initialize Resend client with API key from environment variable
 const resendClient = new Resend(process.env.RESEND_API_KEY);
@@ -242,7 +243,7 @@ export async function sendOTPEmail(
         </div>
 
         <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid #f59e0b;">
-          <p style="margin: 0;"><strong>Important:</strong> This code will expire in 10 minutes. Do not share this code with anyone.</p>
+          <p style="margin: 0;"><strong>Important:</strong> This code will expire in ${Math.floor(OTP_EXPIRY / 60)} minutes. Do not share this code with anyone.</p>
         </div>
 
         <p style="margin-top: 2rem; color: #6b7280; font-size: 0.875rem;">
