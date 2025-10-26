@@ -1,32 +1,18 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Mail } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { OTPVerification } from "@/components/OTPVerification";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
-
-const RESEND_TIMER = 10; // 10 seconds for development, will be 120 in production
 
 export default function VerifyOTPPage() {
   const [, setLocation] = useLocation();
-  const [otpValue, setOtpValue] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isResending, setIsResending] = useState(false);
   const [email, setEmail] = useState("");
   const [verificationType, setVerificationType] = useState<
     "email_verification" | "password_reset" | "email_change"
   >("email_verification");
-  const [countdown, setCountdown] = useState(0);
   const [returnPath, setReturnPath] = useState("/");
+  const [userId, setUserId] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,289 +29,149 @@ export default function VerifyOTPPage() {
       setEmail(context.email || "");
       setVerificationType(context.type || "email_verification");
       setReturnPath(context.returnPath || "/");
-      
-      // Start countdown if resent recently
-      const lastResent = sessionStorage.getItem("lastOTPResent");
-      if (lastResent) {
-        const elapsed = Math.floor((Date.now() - parseInt(lastResent)) / 1000);
-        if (elapsed < RESEND_TIMER) {
-          setCountdown(RESEND_TIMER - elapsed);
-        }
-      }
+      setUserId(context.userId || null);
     } catch (err) {
       console.error("Failed to parse verification context:", err);
       setLocation("/");
     }
   }, [setLocation]);
 
-  // Countdown timer effect
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
-
-  const handleVerifyOtp = async () => {
-    if (otpValue.length !== 6) {
-      toast({
-        variant: "destructive",
-        title: "Invalid code",
-        description: "Please enter a valid 6-digit code",
-      });
-      return;
-    }
-
-    setIsVerifying(true);
-
-    try {
-      const response = await fetch("/api/auth/verify-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          code: otpValue,
-          type: verificationType,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Verification failed");
-      }
-
-      // Update user in localStorage with verified status if email verification
-      if (verificationType === "email_verification") {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
+  const handleVerifySuccess = (result: any) => {
+    // Update user in localStorage with verified status if email verification
+    if (verificationType === "email_verification") {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
           const user = JSON.parse(storedUser);
           if (user.email === email) {
             user.isEmailVerified = true;
             localStorage.setItem("user", JSON.stringify(user));
           }
-        } else {
-          // If no user in localStorage, fetch the user data
-          try {
-            const loginResponse = await fetch("/api/auth/login", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                email,
-                // We can't login without password, so just update the session
-                // The user will need to login manually
-              }),
-            });
-          } catch (err) {
-            // Ignore login error, user will login manually
-            console.log("User needs to login manually after verification");
-          }
+        } catch (err) {
+          console.error("Failed to update user:", err);
         }
       }
+    }
 
-      // Clear verification context
+    // For password reset, store the verified code and redirect to reset form
+    if (verificationType === "password_reset") {
+      sessionStorage.setItem(
+        "passwordResetContext",
+        JSON.stringify({
+          email,
+          code: result.code,
+        })
+      );
       sessionStorage.removeItem("verificationContext");
-      sessionStorage.removeItem("lastOTPResent");
+      setLocation("/reset-password");
+      return;
+    }
 
+    // For email change, show success and redirect back
+    if (verificationType === "email_change") {
       toast({
         title: "Success",
-        description: result.message || "Verification successful!",
+        description: "Email changed successfully",
       });
-      
-      // Redirect after success
-      setTimeout(() => {
-        setLocation(returnPath);
-      }, 2000);
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Verification failed",
-        description: err instanceof Error ? err.message : "An error occurred during verification",
-      });
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    setIsResending(true);
-
-    try {
-      const response = await fetch("/api/auth/resend-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          type: verificationType,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Check for rate limit error
-        if (response.status === 429 && result.remainingTime) {
-          setCountdown(result.remainingTime);
-          sessionStorage.setItem("lastOTPResent", Date.now().toString());
-        }
-        throw new Error(result.error || "Failed to resend OTP");
-      }
-
-      setOtpValue("");
-      toast({
-        title: "Code sent",
-        description: "A new verification code has been sent to your email",
-      });
-      setCountdown(RESEND_TIMER);
-      sessionStorage.setItem("lastOTPResent", Date.now().toString());
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Failed to resend",
-        description: err instanceof Error ? err.message : "Failed to resend OTP",
-      });
-    } finally {
-      setIsResending(false);
-    }
-  };
-
-  const handleVerifyLater = async () => {
-    // Delete OTP from database
-    try {
-      await fetch("/api/auth/cancel-verification", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          type: verificationType,
-        }),
-      });
-    } catch (err) {
-      console.error("Failed to cancel verification:", err);
     }
 
     // Clear verification context
     sessionStorage.removeItem("verificationContext");
-    sessionStorage.removeItem("lastOTPResent");
 
+    // Redirect after success
+    setTimeout(() => {
+      setLocation(returnPath);
+    }, 1500);
+  };
+
+  const handleCancel = () => {
+    // Clear verification context
+    sessionStorage.removeItem("verificationContext");
     // Redirect back to return path
     setLocation(returnPath);
   };
 
+  if (!email) {
+    return null;
+  }
+
+  const getTitleByType = () => {
+    switch (verificationType) {
+      case "email_verification":
+        return "Verify Your Email";
+      case "password_reset":
+        return "Verify Code";
+      case "email_change":
+        return "Verify New Email";
+      default:
+        return "Verify Your Email";
+    }
+  };
+
+  const getDescriptionByType = () => {
+    switch (verificationType) {
+      case "email_verification":
+        return "We've sent a 6-digit verification code to your email";
+      case "password_reset":
+        return "Enter the 6-digit code sent to your email";
+      case "email_change":
+        return "We've sent a 6-digit verification code to your new email";
+      default:
+        return "We've sent a 6-digit verification code to your email";
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
       {/* Logo Header - Top Left */}
-      <div className="absolute top-8 left-8">
-        <Link href="/" className="cursor-pointer hover:opacity-80 transition-opacity">
-          <div className="flex items-center gap-3">
-            <img
-              src="/favicon.png"
-              alt="SadaqahExpress Logo"
-              className="w-10 h-10 md:w-12 md:h-12"
-            />
-            <div>
-              <h1 className="text-xl font-bold font-serif">SadaqahExpress</h1>
-              <p className="text-xs text-muted-foreground">Digital Products</p>
-            </div>
+      <div className="container mx-auto px-4 py-4">
+        <Link href="/" className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3 w-fit">
+          <img
+            src="/favicon.png"
+            alt="SadaqahExpress Logo"
+            className="w-10 h-10 md:w-12 md:h-12"
+          />
+          <div>
+            <h1 className="text-xl font-bold font-serif leading-tight">
+              SadaqahExpress
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Digital Products
+            </p>
           </div>
         </Link>
       </div>
 
-      {/* Verify Email Section - Outside Card */}
-      <div className="w-full max-w-md mb-8 text-center">
-        <div className="flex items-center justify-center mb-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Mail className="h-8 w-8 text-primary" />
+      {/* Centered Content */}
+      <div className="flex flex-col items-center justify-center mt-8">
+        <div className="w-full max-w-md mb-8 text-center">
+          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <Mail className="h-6 w-6 text-primary" />
           </div>
+          <h1 className="text-2xl font-bold mb-2">{getTitleByType()}</h1>
+          <p className="text-muted-foreground">
+            {getDescriptionByType()}
+          </p>
         </div>
-        <h1 className="text-2xl font-bold mb-2">Verify Your Email</h1>
-        <p className="text-muted-foreground">
-          We've sent a 6-digit verification code to{" "}
-          <strong className="text-foreground">{email}</strong>
-        </p>
+
+        <Card className="w-full max-w-md shadow-xl">
+          <CardContent className="pt-6">
+            <OTPVerification
+              email={email}
+              verificationType={verificationType}
+              onVerifySuccess={handleVerifySuccess}
+              onCancel={handleCancel}
+              verifyEndpoint={
+                verificationType === "email_change" && userId
+                  ? `/api/account/verify-email-change?userId=${userId}`
+                  : "/api/auth/verify-otp"
+              }
+              showCancelButton={true}
+              startTimer={true}
+            />
+          </CardContent>
+        </Card>
       </div>
-
-      <Card className="w-full max-w-md shadow-xl">
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-2">
-            <Label className="text-center block">Verification Code</Label>
-            <div className="flex justify-center">
-              <InputOTP
-                maxLength={6}
-                value={otpValue}
-                onChange={setOtpValue}
-                disabled={isVerifying}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleVerifyOtp}
-            className="w-full"
-            disabled={isVerifying || otpValue.length !== 6}
-          >
-            {isVerifying && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Verify Email
-          </Button>
-
-          <div className="space-y-2">
-            <div className="text-center">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleResendOtp}
-                disabled={isResending || countdown > 0}
-                className="text-sm"
-              >
-                {isResending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : countdown > 0 ? (
-                  `Resend code in ${countdown}s`
-                ) : (
-                  "Resend verification code"
-                )}
-              </Button>
-            </div>
-
-            <div className="text-center">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleVerifyLater}
-                className="text-sm text-muted-foreground"
-              >
-                I'll verify later
-              </Button>
-            </div>
-          </div>
-
-          <div className="bg-muted p-3 rounded-md text-sm text-muted-foreground text-center">
-            <p>The verification code will expire in 10 minutes.</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -126,8 +126,8 @@ export default function ManageOrders() {
         onClick={() => setLocation("/admin/dashboard")}
         className="mb-4 gap-2"
         >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Dashboard
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
         </Button>
           <div className="flex justify-between items-center mb-6">
             <div>

@@ -152,8 +152,12 @@ export default function BackupRestore() {
       <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <Link href="/admin/dashboard">
-            <Button variant="ghost" size="sm" className="mb-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
+            <Button
+            variant="outline"
+            onClick={() => setLocation("/admin/dashboard")}
+            className="mb-4 gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
               Back to Dashboard
             </Button>
           </Link>

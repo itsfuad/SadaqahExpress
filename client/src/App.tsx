@@ -11,6 +11,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import NewAdmin from "@/pages/NewAdmin";
 import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import AccountSettings from "@/pages/AccountSettings";
 import VerifyOTPPage from "@/pages/VerifyOTPPage";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/new-admin" component={NewAdmin} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/account-settings" component={AccountSettings} />
       <Route path="/verify-otp" component={VerifyOTPPage} />
       <Route path="/admin/dashboard" component={AdminDashboard} />

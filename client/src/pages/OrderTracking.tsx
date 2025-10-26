@@ -80,8 +80,8 @@ export default function OrderTracking() {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-1 py-8">
-        <div className="container mx-auto px-4">
+      <main className="flex-1 py-8 flex items-center">
+        <div className="container mx-auto px-4 w-full">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-8">
               <h1 className="text-3xl md:text-4xl font-bold font-serif mb-2">Track Your Order</h1>

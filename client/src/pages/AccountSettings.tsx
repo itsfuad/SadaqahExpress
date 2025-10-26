@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
+import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -21,7 +22,6 @@ import {
   Loader2,
   User,
   Mail,
-  ArrowLeft,
   Trash2,
   Package,
 } from "lucide-react";
@@ -35,11 +35,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -72,13 +67,9 @@ type ChangeEmailForm = z.infer<typeof changeEmailSchema>;
 
 export default function AccountSettings() {
   const [, setLocation] = useLocation();
-  const [error, setError] = useState<string>("");
   const [isLoadingName, setIsLoadingName] = useState(false);
   const [isLoadingPassword, setIsLoadingPassword] = useState(false);
   const [isLoadingEmail, setIsLoadingEmail] = useState(false);
-  const [showEmailOtp, setShowEmailOtp] = useState(false);
-  const [otpValue, setOtpValue] = useState("");
-  const [newEmail, setNewEmail] = useState("");
   const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -265,12 +256,19 @@ export default function AccountSettings() {
         throw new Error(result.error || "Failed to change email");
       }
 
-      setNewEmail(data.newEmail);
-      setShowEmailOtp(true);
-      toast({
-        title: "Success",
-        description: "Verification code sent to your new email",
-      });
+      // Set verification context for OTP page
+      sessionStorage.setItem(
+        "verificationContext",
+        JSON.stringify({
+          email: data.newEmail,
+          type: "email_change",
+          returnPath: "/account-settings",
+          userId: user.id,
+        })
+      );
+
+      // Redirect to OTP verification page
+      setLocation("/verify-otp");
       resetEmail();
     } catch (err) {
       toast({
@@ -278,53 +276,6 @@ export default function AccountSettings() {
         title: "Error",
         description: err instanceof Error ? err.message : "Failed to change email",
       });
-    } finally {
-      setIsLoadingEmail(false);
-    }
-  };
-
-  const handleVerifyEmailOtp = async () => {
-    if (!user || otpValue.length !== 6) {
-      setError("Please enter a valid 6-digit code");
-      return;
-    }
-
-    setIsLoadingEmail(true);
-    setError("");
-
-    try {
-      const response = await fetch(
-        `/api/account/verify-email-change?userId=${user.id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            newEmail,
-            code: otpValue,
-          }),
-        },
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to verify email");
-      }
-
-      // Refetch user data from database and update localStorage
-      await refetchUser();
-
-      toast({
-        title: "Success",
-        description: "Email changed successfully",
-      });
-      setShowEmailOtp(false);
-      setOtpValue("");
-      setNewEmail("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to verify email");
     } finally {
       setIsLoadingEmail(false);
     }
@@ -429,93 +380,22 @@ export default function AccountSettings() {
     );
   }
 
-  if (showEmailOtp) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
-        <div className="w-full max-w-md">
-          <Card>
-            <CardHeader>
-              <CardTitle>Verify New Email</CardTitle>
-              <CardDescription>
-                We've sent a 6-digit verification code to{" "}
-                <strong>{newEmail}</strong>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label>Verification Code</Label>
-                <div className="flex justify-center">
-                  <InputOTP
-                    maxLength={6}
-                    value={otpValue}
-                    onChange={setOtpValue}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleVerifyEmailOtp}
-                className="w-full"
-                disabled={isLoadingEmail || otpValue.length !== 6}
-              >
-                {isLoadingEmail && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Verify Email
-              </Button>
-
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowEmailOtp(false);
-                  setOtpValue("");
-                  setNewEmail("");
-                }}
-                className="w-full"
-              >
-                Cancel
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <Link href={user.role === "admin" ? "/admin/dashboard" : "/"}>
-            <Button variant="ghost" size="sm" className="mb-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to {user.role === "admin" ? "Dashboard" : "Home"}
-            </Button>
-          </Link>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Account Settings</h1>
-              <p className="text-muted-foreground mt-1">
-                Manage your account information
-              </p>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header onSearchClick={() => {}} />
+      
+      <main className="flex-1 bg-gradient-to-br from-background via-background to-muted">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">Account Settings</h1>
+                <p className="text-muted-foreground mt-1">
+                  Manage your account information
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
@@ -755,7 +635,7 @@ export default function AccountSettings() {
                     <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">No orders yet</p>
                     <Link href="/">
-                      <Button variant="ghost" className="mt-2">
+                      <Button variant="outline" className="mt-2">
                         Start Shopping
                       </Button>
                     </Link>
@@ -908,7 +788,8 @@ export default function AccountSettings() {
             </CardContent>
           </Card>
         )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
