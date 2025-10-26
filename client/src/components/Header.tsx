@@ -170,14 +170,14 @@ export function Header({
               {/* Logo icon - always visible */}
               <img
                 src="/favicon.png"
-                alt="SadaqahExpress Logo"
+                alt="Sadaqah Express Logo"
                 className="w-10 h-10 md:w-12 md:h-12 shrink-0"
               />
 
               {/* Text branding - hidden on mobile, visible on desktop */}
               <div className="hidden lg:block">
                 <h1 className="text-xl font-bold font-serif leading-tight">
-                  SadaqahExpress
+                  Sadaqah Express
                 </h1>
                 <p className="text-xs text-muted-foreground">
                   Digital Products

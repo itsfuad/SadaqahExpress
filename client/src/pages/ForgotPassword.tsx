@@ -80,12 +80,12 @@ export default function ForgotPassword() {
         <Link href="/" className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3 w-fit">
           <img
             src="/favicon.png"
-            alt="SadaqahExpress Logo"
+            alt="Sadaqah Express Logo"
             className="w-10 h-10 md:w-12 md:h-12"
           />
           <div>
             <h1 className="text-xl font-bold font-serif leading-tight">
-              SadaqahExpress
+              Sadaqah Express
             </h1>
             <p className="text-xs text-muted-foreground">
               Digital Products

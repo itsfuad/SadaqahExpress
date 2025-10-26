@@ -55,7 +55,7 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
 
         <p style="color: #6b7280; font-size: 0.875rem;">
           Best regards,<br/>
-          SadaqahExpress Team
+          Sadaqah Express Team
         </p>
       </div>
     `;
@@ -174,7 +174,7 @@ export async function sendProductDeliveryEmail(order: Order) {
         <p>For immediate assistance, please contact us at our Whatsapp or Telegram: 017 856 856 54
 
         <p style="margin-top: 2rem; color: #6b7280; font-size: 0.875rem;">
-          Thank you for choosing SadaqahExpress!
+          Thank you for choosing Sadaqah Express!
         </p>
       </div>
     `;
@@ -209,19 +209,19 @@ export async function sendOTPEmail(
 
     switch (type) {
       case "email_verification":
-        subject = "Verify Your Email - SadaqahExpress";
+        subject = "Verify Your Email - Sadaqah Express";
         heading = "Verify Your Email Address";
         message =
           "Thank you for signing up! Please use the code below to verify your email address:";
         break;
       case "password_reset":
-        subject = "Reset Your Password - SadaqahExpress";
+        subject = "Reset Your Password - Sadaqah Express";
         heading = "Reset Your Password";
         message =
           "You requested to reset your password. Please use the code below to continue:";
         break;
       case "email_change":
-        subject = "Verify Your New Email - SadaqahExpress";
+        subject = "Verify Your New Email - Sadaqah Express";
         heading = "Verify Your New Email Address";
         message =
           "You requested to change your email address. Please use the code below to verify your new email:";
@@ -252,7 +252,7 @@ export async function sendOTPEmail(
 
         <p style="color: #6b7280; font-size: 0.875rem;">
           Best regards,<br/>
-          SadaqahExpress Team
+          Sadaqah Express Team
         </p>
       </div>
     `;

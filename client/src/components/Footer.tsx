@@ -13,9 +13,9 @@ export function Footer() {
           <div className="flex flex-col md:flex-row justify-around gap-2">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src="/favicon.png" alt="SadaqahExpress Logo" className="h-8" />
+                <img src="/favicon.png" alt="Sadaqah Express Logo" className="h-8" />
                 <div>
-                  <h3 className="font-bold text-lg font-serif">SadaqahExpress</h3>
+                  <h3 className="font-bold text-lg font-serif">Sadaqah Express</h3>
                   <p className="text-xs text-muted-foreground">Digital Products</p>
                 </div>
               </div>
@@ -45,10 +45,21 @@ export function Footer() {
         <div className="border-t py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} SadaqahExpress. All rights reserved.
+              © {new Date().getFullYear()} Sadaqah Express. All rights reserved.
             </p>
             <p className="text-sm text-muted-foreground">
               Whatsapp & Telegram: 017 856 856 54
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Developed by{" "}
+              <a
+                href="https://github.com/itsfuad"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground hover:underline font-medium"
+              >
+                itsfuad
+              </a>
             </p>
           </div>
         </div>

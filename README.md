@@ -1,4 +1,4 @@
-# SadaqahExpress - Digital Product E-commerce Platform
+# Sadaqah Express - Digital Product E-commerce Platform
 
 A modern e-commerce platform for selling digital products, software licenses, and streaming subscriptions. Built with React, Express, TypeScript, and Redis.
 
@@ -99,7 +99,7 @@ npm start
 ## Project Structure
 
 ```
-SadaqahExpress/
+Sadaqah Express/
 ├── client/                 # Frontend React application
 │   ├── src/
 │   │   ├── components/     # Reusable UI components

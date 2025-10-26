@@ -19,7 +19,7 @@ interface HeroCarouselProps {
 export function HeroCarousel({ 
   slides, 
   autoPlayInterval = 5000,
-  heroTitle = "Welcome to SadaqahExpress",
+  heroTitle = "Welcome to Sadaqah Express",
   heroSubtitle = "Your trusted source for premium digital products",
   ctaText = "Shop Now",
   onCtaClick
