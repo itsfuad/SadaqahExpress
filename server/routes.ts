@@ -505,10 +505,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Delete used OTP
-      await storage.deleteOTP(otp.id);
+      // Delete used OTP only for non-password-reset types
+      // For password reset, keep the OTP until password is actually reset
+      if (type !== "password_reset") {
+        await storage.deleteOTP(otp.id);
+      }
 
-      res.json({ success: true, message: "OTP verified successfully" });
+      // Return the code for password reset flow
+      res.json({ 
+        success: true, 
+        message: "OTP verified successfully",
+        code: type === "password_reset" ? code : undefined
+      });
     } catch (error) {
       if (error instanceof ZodError) {
         return res
