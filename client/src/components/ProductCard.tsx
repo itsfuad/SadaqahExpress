@@ -89,7 +89,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             )}
           </div>
           {product.originalPrice && discount > 0 && (
-            <p className="text-sm text-chart-3 mt-1 font-medium">
+            <p className="text-sm text-green-600 mt-1 font-medium">
               You save ৳ {(product.originalPrice - product.price).toFixed(2)} ({discount}%)
             </p>
           )}

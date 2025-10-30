@@ -459,7 +459,7 @@ export default function AccountSettings() {
                         <button
                           onClick={handleSendVerificationEmail}
                           disabled={isSendingVerification}
-                          className="underline font-semibold hover:no-underline text-orange-300"
+                          className="underline font-semibold hover:no-underline text-sky-500"
                         >
                           {isSendingVerification ? "Sending..." : "Verify now"}
                         </button>
