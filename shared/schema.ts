@@ -62,6 +62,15 @@ export interface OTP {
   createdAt: string;
 }
 
+export interface Rating {
+  id: string;
+  userId: string;
+  productId: number;
+  rating: number; // 1-5 stars
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Product schemas
 const productBaseSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -172,6 +181,12 @@ export const verifyEmailChangeSchema = z.object({
   code: z.string().length(6, "Code must be 6 digits"),
 });
 
+// Rating schemas
+export const insertRatingSchema = z.object({
+  productId: z.number(),
+  rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
+});
+
 // Type exports
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
@@ -184,3 +199,4 @@ export type ResetPassword = z.infer<typeof resetPasswordSchema>;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 export type ChangeEmail = z.infer<typeof changeEmailSchema>;
 export type VerifyEmailChange = z.infer<typeof verifyEmailChangeSchema>;
+export type InsertRating = z.infer<typeof insertRatingSchema>;

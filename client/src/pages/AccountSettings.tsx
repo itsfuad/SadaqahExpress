@@ -24,6 +24,7 @@ import {
   Mail,
   Trash2,
   Package,
+  AlertTriangle,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -64,6 +65,38 @@ const changeEmailSchema = z.object({
 type UpdateNameForm = z.infer<typeof updateNameSchema>;
 type UpdatePasswordForm = z.infer<typeof updatePasswordSchema>;
 type ChangeEmailForm = z.infer<typeof changeEmailSchema>;
+
+// Configuration constants (should match server config)
+const UNVERIFIED_EXPIRY_MINUTES = 10;
+
+// Helper function to calculate time remaining for account deletion
+const getAccountDeletionInfo = (user: UserType | null) => {
+  if (!user || user.isEmailVerified) return null;
+  
+  const createdAt = new Date(user.createdAt).getTime();
+  const expiryTime = createdAt + (UNVERIFIED_EXPIRY_MINUTES * 60 * 1000);
+  const now = Date.now();
+  const timeRemaining = expiryTime - now;
+  
+  if (timeRemaining <= 0) {
+    return { expired: true, timeString: "soon" };
+  }
+  
+  const minutesRemaining = Math.floor(timeRemaining / 60000);
+  const secondsRemaining = Math.floor((timeRemaining % 60000) / 1000);
+  
+  if (minutesRemaining > 0) {
+    return { 
+      expired: false, 
+      timeString: `${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}` 
+    };
+  }
+  
+  return { 
+    expired: false, 
+    timeString: `${secondsRemaining} second${secondsRemaining !== 1 ? 's' : ''}` 
+  };
+};
 
 export default function AccountSettings() {
   const [, setLocation] = useLocation();
@@ -414,6 +447,27 @@ export default function AccountSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {!user.isEmailVerified && (() => {
+                  const deletionInfo = getAccountDeletionInfo(user);
+                  return deletionInfo && (
+                    <Alert variant="destructive" className="border-orange-500 bg-orange-500/10">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Account Verification Required!</strong>
+                        <br />
+                        Your account will be deleted in {deletionInfo.timeString} if not verified.{" "}
+                        <button
+                          onClick={handleSendVerificationEmail}
+                          disabled={isSendingVerification}
+                          className="underline font-semibold hover:no-underline text-orange-300"
+                        >
+                          {isSendingVerification ? "Sending..." : "Verify now"}
+                        </button>
+                      </AlertDescription>
+                    </Alert>
+                  );
+                })()}
+                
                 <div className="space-y-2">
                   <Label>Role</Label>
                   <Input
@@ -426,18 +480,8 @@ export default function AccountSettings() {
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <Input value={user.email} disabled />
-                  {user.isEmailVerified ? (
+                  {user.isEmailVerified && (
                     <p className="text-xs text-green-600">✓ Verified</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      <button
-                        onClick={handleSendVerificationEmail}
-                        disabled={isSendingVerification}
-                        className="text-primary hover:underline font-medium"
-                      >
-                        {isSendingVerification ? "Sending..." : "Click to verify"}
-                      </button>
-                    </p>
                   )}
                 </div>
 

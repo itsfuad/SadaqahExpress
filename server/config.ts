@@ -11,3 +11,8 @@ export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@sadaqahexpress.com"
 
 // App settings
 export const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+
+// Feature flags
+export const FEATURE_FLAGS = {
+  ENABLE_RATINGS: false, // Set to true to enable the rating system
+};

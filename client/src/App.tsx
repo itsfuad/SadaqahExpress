@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import Home from "@/pages/Home";
+import ProductDetails from "@/pages/ProductDetails";
 import Checkout from "@/pages/Checkout";
 import OrderTracking from "@/pages/OrderTracking";
 import Login from "@/pages/Login";
@@ -29,6 +30,7 @@ function Router() {
       <ScrollToTop />
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/product/:id" component={ProductDetails} />
         <Route path="/checkout" component={Checkout} />
         <Route path="/track-order" component={OrderTracking} />
         <Route path="/track-order/:id" component={OrderTracking} />

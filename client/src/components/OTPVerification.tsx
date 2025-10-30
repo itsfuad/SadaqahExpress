@@ -269,7 +269,7 @@ export function OTPVerification({
             {isCancelling && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Cancel
+            Verify later
           </Button>
         </div>
       )}

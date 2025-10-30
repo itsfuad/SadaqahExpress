@@ -11,6 +11,7 @@ import {
   resetPasswordSchema,
   updateProfileSchema,
   changeEmailSchema,
+  insertRatingSchema,
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { randomInt } from "crypto";
@@ -147,6 +148,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting product:", error);
       res.status(500).json({ error: "Failed to delete product" });
+    }
+  });
+
+  // Rating routes
+  app.post("/api/ratings", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Authentication required. Please login to rate products." });
+      }
+
+      const { productId, rating } = req.body;
+      const validatedRating = insertRatingSchema.parse({ productId, rating });
+      const result = await storage.createOrUpdateRating(req.session.userId, validatedRating);
+
+      res.json(result);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error creating/updating rating:", error);
+      res.status(500).json({ error: "Failed to create/update rating" });
+    }
+  });
+
+  app.get("/api/ratings/product/:productId", async (req, res) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      if (isNaN(productId)) {
+        return res.status(400).json({ error: "Invalid product ID" });
+      }
+
+      const { average, count } = await storage.getAverageRating(productId);
+      res.json({ average, count });
+    } catch (error) {
+      console.error("Error fetching product ratings:", error);
+      res.status(500).json({ error: "Failed to fetch ratings" });
+    }
+  });
+
+  app.get("/api/ratings/user/:productId", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const productId = parseInt(req.params.productId);
+      
+      if (isNaN(productId)) {
+        return res.status(400).json({ error: "Invalid product ID" });
+      }
+
+      const rating = await storage.getUserRatingForProduct(req.session.userId, productId);
+      res.json(rating || null);
+    } catch (error) {
+      console.error("Error fetching user rating:", error);
+      res.status(500).json({ error: "Failed to fetch rating" });
     }
   });
 
@@ -406,6 +463,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!isValidPassword) {
         return res.status(401).json({ error: "Invalid email or password" });
       }
+
+      // Set session
+      req.session.userId = user.id;
 
       res.json({
         success: true,

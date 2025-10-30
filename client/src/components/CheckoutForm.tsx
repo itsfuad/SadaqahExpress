@@ -1,7 +1,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +34,7 @@ interface CheckoutFormProps {
 
 export function CheckoutForm({ total, user, onSubmit }: CheckoutFormProps) {
   const isLoggedIn = !!user;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -52,15 +54,22 @@ export function CheckoutForm({ total, user, onSubmit }: CheckoutFormProps) {
     }
   }, [user, form]);
 
-  const handleSubmit = (data: CheckoutFormData) => {
+  const handleSubmit = async (data: CheckoutFormData) => {
     console.log("Order submitted:", data);
-    onSubmit?.(data);
+    setIsSubmitting(true);
+    await onSubmit?.(data);
+    setTimeout(() => setIsSubmitting(false), 1000);
   };
 
   return (
     <div className="max-w-4xl mx-auto p-4">
       <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
+        <motion.div
+          className="md:col-span-2"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <Card>
             <CardHeader>
               <CardTitle>Order Information</CardTitle>
@@ -146,21 +155,57 @@ export function CheckoutForm({ total, user, onSubmit }: CheckoutFormProps) {
                     )}
                   />
 
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    size="lg"
-                    data-id="button-submit-order"
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    Submit Order
-                  </Button>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      size="lg"
+                      data-id="button-submit-order"
+                      disabled={isSubmitting}
+                    >
+                      <AnimatePresence mode="wait">
+                        {isSubmitting ? (
+                          <motion.span
+                            key="submitting"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="flex items-center gap-2"
+                          >
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
+                            />
+                            Processing...
+                          </motion.span>
+                        ) : (
+                          <motion.span
+                            key="submit"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                          >
+                            Submit Order
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </Button>
+                  </motion.div>
                 </form>
               </Form>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
 
-        <div>
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
           <Card>
             <CardHeader>
               <CardTitle>Order Summary</CardTitle>
@@ -187,7 +232,7 @@ export function CheckoutForm({ total, user, onSubmit }: CheckoutFormProps) {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

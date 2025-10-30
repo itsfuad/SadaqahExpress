@@ -4,9 +4,11 @@ import {
   type User,
   type OTP,
   type PendingUser,
+  type Rating,
   type InsertProduct,
   type InsertOrder,
   type InsertUser,
+  type InsertRating,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { createClient } from "redis";
@@ -78,6 +80,12 @@ export interface IStorage {
   
   // Cleanup methods
   deleteUnverifiedUsers(olderThanSeconds: number): Promise<number>;
+
+  // Rating methods
+  createOrUpdateRating(userId: string, rating: InsertRating): Promise<Rating>;
+  getUserRatingForProduct(userId: string, productId: number): Promise<Rating | undefined>;
+  getProductRatings(productId: number): Promise<Rating[]>;
+  getAverageRating(productId: number): Promise<{ average: number; count: number }>;
 }
 
 export class MemStorage implements IStorage {
@@ -86,6 +94,7 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private pendingUsers: Map<string, PendingUser>;
   private otps: Map<string, OTP>;
+  private ratings: Map<string, Rating>; // key: userId:productId
   private nextProductId: number;
 
   constructor() {
@@ -94,70 +103,108 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.pendingUsers = new Map();
     this.otps = new Map();
+    this.ratings = new Map();
     this.nextProductId = 1;
-    // this.initializeData(); // Removed - no dummy data
+    this.initializeData();
   }
 
   private initializeData() {
-    // Initialize with sample products
+    // Initialize with sample products only if empty
+    if (this.products.size > 0) return;
+
     const sampleProducts: Omit<Product, "id">[] = [
       {
         name: "Windows 11 Pro",
         description:
-          "Windows 11 Pro Digital License - Lifetime activation for 1 PC",
-        image: "/placeholder-win11.png",
-        price: 400.0,
-        originalPrice: 850.0,
+          "Windows 11 Pro Digital License - Lifetime activation for 1 PC with all latest features including enhanced security, gaming performance, and productivity tools.",
+        image: "/images/windows.jpg",
+        price: 899.0,
+        originalPrice: 1299.0,
         rating: 5,
-        reviewCount: 19,
+        reviewCount: 124,
         badge: "Bestseller",
         category: "microsoft",
         stock: 50,
       },
       {
         name: "Windows 10 Pro",
-        description: "Windows 10 Pro Digital License - Lifetime activation",
-        image: "/placeholder-win10.png",
-        price: 350.0,
-        originalPrice: 399.0,
-        rating: 4,
-        reviewCount: 62,
+        description: "Windows 10 Pro Digital License - Lifetime activation with full security updates and professional features for businesses and power users.",
+        image: "/images/windows.jpg",
+        price: 699.0,
+        originalPrice: 999.0,
+        rating: 5,
+        reviewCount: 287,
         category: "microsoft",
         stock: 100,
       },
       {
-        name: "Windows + Office Combo",
-        description: "Windows 10 Pro + Office 2021 Bundle",
-        image: "/placeholder-combo.png",
-        price: 600.0,
-        originalPrice: 800.0,
+        name: "Microsoft Office 2021 Professional Plus",
+        description: "Office 2021 Professional Plus - Lifetime License including Word, Excel, PowerPoint, Outlook, Access, Publisher, and OneNote for Windows.",
+        image: "/images/office.jpg",
+        price: 1299.0,
+        originalPrice: 2499.0,
         rating: 5,
-        reviewCount: 45,
+        reviewCount: 356,
         badge: "Sale",
-        category: "microsoft",
-        stock: 30,
-      },
-      {
-        name: "Microsoft Office 365",
-        description: "Office 365 Personal - 1 Year Subscription",
-        image: "/placeholder-office365.png",
-        price: 400.0,
-        originalPrice: 600.0,
-        rating: 4,
-        reviewCount: 14,
         category: "microsoft",
         stock: 75,
       },
       {
-        name: "Microsoft Office 2021 Pro Plus",
-        description: "Office 2021 Professional Plus - Lifetime License",
-        image: "/placeholder-office2021.png",
-        price: 500.0,
-        originalPrice: 1500.0,
-        rating: 5,
-        reviewCount: 86,
+        name: "Microsoft Office 365 Personal",
+        description: "Office 365 Personal - 1 Year Subscription with 1TB OneDrive cloud storage, premium Office apps, and ongoing updates.",
+        image: "/images/office.jpg",
+        price: 499.0,
+        originalPrice: 699.0,
+        rating: 4,
+        reviewCount: 198,
         category: "microsoft",
         stock: 60,
+      },
+      {
+        name: "ChatGPT Plus Subscription",
+        description: "ChatGPT Plus - 1 Month Premium Access with GPT-4, faster response times, and priority access during peak hours.",
+        image: "/images/gpt.jpg",
+        price: 1999.0,
+        originalPrice: 2499.0,
+        rating: 5,
+        reviewCount: 542,
+        badge: "Hot",
+        category: "ai",
+        stock: 200,
+      },
+      {
+        name: "Internet Download Manager",
+        description: "IDM - Premium Download Manager with 5x faster downloads, video grabber, resume capability, and lifetime license.",
+        image: "/images/idm.jpg",
+        price: 399.0,
+        originalPrice: 599.0,
+        rating: 5,
+        reviewCount: 421,
+        category: "utilities",
+        stock: 150,
+      },
+      {
+        name: "Windows 11 + Office 2021 Bundle",
+        description: "Complete productivity bundle with Windows 11 Pro and Office 2021 Professional Plus at a special discounted price.",
+        image: "/images/office.jpg",
+        price: 1899.0,
+        originalPrice: 3299.0,
+        rating: 5,
+        reviewCount: 167,
+        badge: "Bundle",
+        category: "microsoft",
+        stock: 30,
+      },
+      {
+        name: "Adobe Creative Cloud All Apps",
+        description: "Adobe Creative Cloud - 1 Month subscription with access to Photoshop, Illustrator, Premiere Pro, After Effects, and 20+ creative apps.",
+        image: "/images/office.jpg",
+        price: 3499.0,
+        originalPrice: 4999.0,
+        rating: 5,
+        reviewCount: 289,
+        category: "creative",
+        stock: 40,
       },
     ];
 
@@ -165,9 +212,6 @@ export class MemStorage implements IStorage {
       const id = this.nextProductId++;
       this.products.set(id, { id, ...product });
     });
-
-    // Create default admin user
-    // No default admin - removed
   }
 
   // Product methods
@@ -504,6 +548,63 @@ export class MemStorage implements IStorage {
 
     return deletedCount;
   }
+
+  // Rating methods
+  async createOrUpdateRating(userId: string, rating: InsertRating): Promise<Rating> {
+    const key = `${userId}:${rating.productId}`;
+    const existingRating = this.ratings.get(key);
+    const now = new Date().toISOString();
+
+    const newRating: Rating = {
+      id: existingRating?.id || randomUUID(),
+      userId,
+      productId: rating.productId,
+      rating: rating.rating,
+      createdAt: existingRating?.createdAt || now,
+      updatedAt: now,
+    };
+
+    this.ratings.set(key, newRating);
+    
+    // Update product average rating
+    await this.updateProductRating(rating.productId);
+    
+    return newRating;
+  }
+
+  async getUserRatingForProduct(userId: string, productId: number): Promise<Rating | undefined> {
+    const key = `${userId}:${productId}`;
+    return this.ratings.get(key);
+  }
+
+  async getProductRatings(productId: number): Promise<Rating[]> {
+    return Array.from(this.ratings.values()).filter(
+      (rating) => rating.productId === productId
+    );
+  }
+
+  async getAverageRating(productId: number): Promise<{ average: number; count: number }> {
+    const ratings = await this.getProductRatings(productId);
+    
+    if (ratings.length === 0) {
+      return { average: 0, count: 0 };
+    }
+
+    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+    const average = sum / ratings.length;
+
+    return { average: Math.round(average * 10) / 10, count: ratings.length };
+  }
+
+  private async updateProductRating(productId: number): Promise<void> {
+    const product = this.products.get(productId);
+    if (!product) return;
+
+    const { average, count } = await this.getAverageRating(productId);
+    product.rating = average;
+    product.reviewCount = count;
+    this.products.set(productId, product);
+  }
 }
 
 // Redis Storage Implementation
@@ -529,10 +630,13 @@ export class RedisStorage implements IStorage {
       socket: {
         host: host,
         port: port,
+        reconnectStrategy: false,
       },
     });
 
-    this.client.on("error", (err) => console.error("Redis Client Error", err));
+    this.client.on("error", (err) => {
+      // Suppress error logs when intentionally not using Redis
+    });
   }
 
   async connect(): Promise<void> {
@@ -1121,6 +1225,94 @@ export class RedisStorage implements IStorage {
 
     return deletedCount;
   }
+
+  // Rating methods
+  async createOrUpdateRating(userId: string, rating: InsertRating): Promise<Rating> {
+    const key = `rating:${userId}:${rating.productId}`;
+    const now = new Date().toISOString();
+    
+    const existingData = await this.client.hGetAll(key);
+    
+    const newRating: Rating = {
+      id: existingData?.id || randomUUID(),
+      userId,
+      productId: rating.productId,
+      rating: rating.rating,
+      createdAt: existingData?.createdAt || now,
+      updatedAt: now,
+    };
+
+    await this.client.hSet(key, {
+      id: newRating.id,
+      userId: newRating.userId,
+      productId: newRating.productId.toString(),
+      rating: newRating.rating.toString(),
+      createdAt: newRating.createdAt,
+      updatedAt: newRating.updatedAt,
+    });
+
+    // Add to product ratings set
+    await this.client.sAdd(`product:${rating.productId}:ratings`, userId);
+    
+    // Update product average rating
+    await this.updateProductRating(rating.productId);
+    
+    return newRating;
+  }
+
+  async getUserRatingForProduct(userId: string, productId: number): Promise<Rating | undefined> {
+    const key = `rating:${userId}:${productId}`;
+    const data = await this.client.hGetAll(key);
+    
+    if (!data || Object.keys(data).length === 0) {
+      return undefined;
+    }
+
+    return {
+      id: data.id,
+      userId: data.userId,
+      productId: parseInt(data.productId),
+      rating: parseInt(data.rating),
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    };
+  }
+
+  async getProductRatings(productId: number): Promise<Rating[]> {
+    const userIds = await this.client.sMembers(`product:${productId}:ratings`);
+    const ratings: Rating[] = [];
+
+    for (const userId of userIds) {
+      const rating = await this.getUserRatingForProduct(userId, productId);
+      if (rating) {
+        ratings.push(rating);
+      }
+    }
+
+    return ratings;
+  }
+
+  async getAverageRating(productId: number): Promise<{ average: number; count: number }> {
+    const ratings = await this.getProductRatings(productId);
+    
+    if (ratings.length === 0) {
+      return { average: 0, count: 0 };
+    }
+
+    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+    const average = sum / ratings.length;
+
+    return { average: Math.round(average * 10) / 10, count: ratings.length };
+  }
+
+  private async updateProductRating(productId: number): Promise<void> {
+    const { average, count } = await this.getAverageRating(productId);
+    
+    await this.client.hSet(`product:${productId}`, {
+      rating: average.toString(),
+      reviewCount: count.toString(),
+    });
+  }
 }
 
 // Storage proxy: try Redis, fall back to in-memory storage if Redis is unavailable
@@ -1281,6 +1473,20 @@ class StorageProxy implements IStorage {
 
   async deleteUnverifiedUsers(olderThanSeconds: number): Promise<number> {
     return this.active.deleteUnverifiedUsers(olderThanSeconds);
+  }
+
+  // Rating methods
+  async createOrUpdateRating(userId: string, rating: InsertRating): Promise<Rating> {
+    return this.active.createOrUpdateRating(userId, rating);
+  }
+  async getUserRatingForProduct(userId: string, productId: number): Promise<Rating | undefined> {
+    return this.active.getUserRatingForProduct(userId, productId);
+  }
+  async getProductRatings(productId: number): Promise<Rating[]> {
+    return this.active.getProductRatings(productId);
+  }
+  async getAverageRating(productId: number): Promise<{ average: number; count: number }> {
+    return this.active.getAverageRating(productId);
   }
 }
 
